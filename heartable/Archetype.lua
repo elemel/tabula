@@ -1,18 +1,13 @@
 local Class = require("heartable.Class")
 local ffi = require("ffi")
+local tableMod = require("heartable.table")
 
+local copyArray = assert(tableMod.copyArray)
 local doubleArrayType = ffi.typeof("double[?]")
 
 local M = Class.new()
 
-local function copyArray(source, destination, size)
-  for i = 0, size - 1 do
-    destination[i] = source[i]
-  end
-end
-
 function M:init(componentTypes, components)
-  print(unpack(components))
   self.componentTypes = assert(componentTypes)
   self.size = 0
   self.capacity = 1
@@ -47,13 +42,13 @@ function M:reserve(capacity)
     until self.capacity >= capacity
 
     local entities = doubleArrayType(self.capacity)
-    copyArray(self.entities, entities, self.size)
+    copyArray(self.entities, 0, self.size, entities, 0)
     self.entities = entities
 
     for component, column in pairs(self.columns) do
       local componentType = assert(self.componentTypes[component])
       local newColumn = componentType:allocateArray(self.capacity)
-      copyArray(column, newColumn, self.size)
+      copyArray(column, 0, self.size, newColumn, 0)
       self.columns[component] = newColumn
     end
   end

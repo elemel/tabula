@@ -58,4 +58,15 @@ function M.values(t, result)
   return result
 end
 
+function M.copyArray(source, i, n, destination, j)
+  i = i or 1
+  n = n or #source
+  destination = destination or {}
+  j = j or 1
+
+  for k = 0, n - 1 do
+    destination[j + k] = source[i + k]
+  end
+end
+
 return M
