@@ -1,17 +1,24 @@
-local Game = require("heartable.Game")
-local Struct = require("heartable.StructType")
+local World = require("heartable.World")
+local StructType = require("heartable.StructType")
 
 function love.load()
   love.window.setTitle("Pong")
-  love.physics.setMeter(1)
 
-  game = Game.new()
+  world = World.new()
+  local names = assert(world.names)
+
+  world.dataTypes.position = StructType.new("position", {
+    x = "double",
+    y = "double",
+  })
+
+  world:addEntity({[names.name] = "isPaddle", [names.isComponent] = true})
 end
 
 function love.draw(...)
-  game:handleEvent("draw", ...)
+  world:handleEvent("draw", ...)
 end
 
 function love.update(...)
-  game:handleEvent("update", ...)
+  world:handleEvent("update", ...)
 end

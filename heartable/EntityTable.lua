@@ -7,32 +7,34 @@ local doubleArrayType = ffi.typeof("double[?]")
 
 local M = Class.new()
 
-function M:init(componentTypes, components)
-  self.componentTypes = assert(componentTypes)
+function M:init(entityType, columnTypes)
+  self.entityType = assert(entityType)
+  self.columnTypes = assert(columnTypes)
+
   self.size = 0
   self.capacity = 1
+
   self.entities = doubleArrayType(self.capacity)
   self.columns = {}
 
-  for _, component in ipairs(components) do
-    local componentType = assert(self.componentTypes[component])
-    self.columns[component] = componentType:allocateArray(self.capacity)
+  for _, columnType in ipairs(self.columnTypes) do
+    local column = assert(columnType:allocateArray(self.capacity))
+    table.insert(self.columns, column)
   end
 end
 
-function M:addEntity(entity, components)
+function M:addRow(entity, row)
   self:reserve(self.size + 1)
 
-  local row = self.size
-  self.size = row + 1
-  self.entities[row] = entity
+  local rowIndex = self.size
+  self.size = rowIndex + 1
+  self.entities[rowIndex] = entity
 
-  for component, column in pairs(self.columns) do
-    local value = components[component] or 0
-    column[row] = value
+  for columnIndex, column in ipairs(self.columns) do
+    column[rowIndex] = row[columnIndex]
   end
 
-  return row
+  return rowIndex
 end
 
 function M:reserve(capacity)
@@ -45,25 +47,25 @@ function M:reserve(capacity)
     copyArray(self.entities, 0, self.size, entities, 0)
     self.entities = entities
 
-    for component, column in pairs(self.columns) do
-      local componentType = assert(self.componentTypes[component])
-      local newColumn = componentType:allocateArray(self.capacity)
+    for columnIndex, column in ipairs(self.columns) do
+      local columnType = self.columnTypes[columnIndex]
+      local newColumn = assert(columnType:allocateArray(self.capacity))
       copyArray(column, 0, self.size, newColumn, 0)
-      self.columns[component] = newColumn
+      self.columns[columnIndex] = newColumn
     end
   end
 end
 
-function M:removeEntity(row)
-  assert(0 <= row and row < self.size)
+function M:removeRow(rowIndex)
+  assert(0 <= rowIndex and rowIndex < self.size)
   local movedEntity = 0
 
-  if row < self.size - 1 then
+  if rowIndex < self.size - 1 then
     movedEntity = self.entities[self.size - 1]
-    self.entities[row] = movedEntity
+    self.entities[rowIndex] = movedEntity
 
     for _, column in pairs(self.columns) do
-      column[row] = column[self.size - 1]
+      column[rowIndex] = column[self.size - 1]
     end
   end
 
