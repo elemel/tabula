@@ -5,7 +5,7 @@ function love.load()
   love.window.setTitle("Pong")
 
   world = World.new()
-  world:addEntity({[world.names.name] = "position"})
+  world:addEntity({name = "position"})
 end
 
 function love.draw(...)

@@ -27,18 +27,14 @@ function M:init()
 end
 
 function M:bootstrap()
-  self.names.isComponent = self:addEntity({})
-  self.names.isDataType = self:addEntity({})
   self.names.name = self:addEntity({})
   self.names.string = self:addEntity({})
   self.names.tag = self:addEntity({})
 
-  self.dataTypes[self.names.string] = StringType.new()
-  self.dataTypes[self.names.tag] = TagType.new()
+  self.dataTypes.string = StringType.new()
+  self.dataTypes.tag = TagType.new()
 
-  self.componentTypes[self.names.isComponent] = self.names.tag
-  self.componentTypes[self.names.isDataType] = self.names.tag
-  self.componentTypes[self.names.name] = self.names.string
+  self.componentTypes.name = "string"
 end
 
 function M:addEntity(components)
@@ -114,12 +110,12 @@ function M:removeEntity(entity)
 end
 
 function M:addTablet(archetype)
-  local previousComponent = 0
+  local previousComponent = ""
   local node = self.tabletRoot
 
   for _, component in ipairs(archetype) do
     if component <= previousComponent then
-      error("Invalid entity type")
+      error("Invalid archetype")
     end
 
     local nextNode = node[component]
