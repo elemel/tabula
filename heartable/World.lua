@@ -47,19 +47,22 @@ function M:addEntity(components)
   local tablet = self:addTablet(archetype)
   local shard = tablet.shards[#tablet.shards]
 
-  if shard == nil or shard.size == shard.capacity then
-    local entities = self.doubleType:allocateArray(tablet.shardCapacity)
+  if shard == nil or shard.rowCount == tablet.shardSize then
+    local entities = self.doubleType:allocateArray(tablet.shardSize)
     local columns = {}
 
-    for _, columnType in ipairs(tablet.columnTypes) do
-      local column = columnType:allocateArray(tablet.shardCapacity)
+    for _, component in ipairs(tablet.archetype) do
+      local typeName = self.componentTypes[component]
+      local dataType = self.dataTypes[typeName]
+      local column = dataType:allocateArray(tablet.shardSize)
       table.insert(columns, column)
     end
 
     shard = {
-      capacity = tablet.shardCapacity,
-      size = 0,
-      garbage = 0,
+      tablet = tablet,
+
+      rowCount = 0,
+      tombstoneCount = 0,
 
       entities = entities,
       columns = columns,
@@ -68,8 +71,8 @@ function M:addEntity(components)
     table.insert(tablet.shards, shard)
   end
 
-  local rowIndex = shard.size
-  shard.size = shard.size + 1
+  local rowIndex = shard.rowCount
+  shard.rowCount = shard.rowCount + 1
 
   shard.entities[rowIndex] = entity
 
@@ -101,12 +104,15 @@ function M:removeEntity(entity)
     error("No such entity: " .. entity)
   end
 
-  if lifecycle.rowIndex == shard.size - 1 then
-    shard.size = shard.size - 1
+  if lifecycle.rowIndex == shard.rowCount - 1 then
+    shard.rowCount = shard.rowCount - 1
   else
     shard.entities[lifecycle.rowIndex] = 0
-    shard.garbage = shard.garbage + 1
+    shard.tombstoneCount = shard.tombstoneCount + 1
   end
+
+  lifecycle.generation = lifecycle.generation + 1
+  lifecycle.shard = nil
 end
 
 function M:addTablet(archetype)
@@ -134,19 +140,14 @@ function M:addTablet(archetype)
   if not tablet then
     print("Adding tablet: " .. table.concat(archetype, ", "))
 
-    local columnTypes = {}
-
-    for _, component in ipairs(archetype) do
-      local componentType = assert(self.componentTypes[component])
-      local dataType = assert(self.dataTypes[componentType])
-      table.insert(columnTypes, dataType)
-    end
-
     tablet = {
       archetype = archetype,
-      columnTypes = columnTypes,
-      shardCapacity = 256,
+
+      shardSize = 256,
       shards = {},
+
+      parents = {},
+      children = {},
     }
 
     table.insert(self.tablets, tablet)
