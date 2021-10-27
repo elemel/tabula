@@ -5,14 +5,7 @@ function love.load()
   love.window.setTitle("Pong")
 
   world = World.new()
-  local names = assert(world.names)
-
-  world.dataTypes.position = StructType.new("position", {
-    x = "double",
-    y = "double",
-  })
-
-  world:addEntity({[names.name] = "isPaddle", [names.isComponent] = true})
+  world:addEntity({[world.names.name] = "position"})
 end
 
 function love.draw(...)

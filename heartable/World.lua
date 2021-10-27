@@ -1,10 +1,10 @@
 local Class = require("heartable.Class")
-local EntityTable = require("heartable.EntityTable")
 local PrimitiveType = require("heartable.PrimitiveType")
 local StringType = require("heartable.StringType")
 local StructType = require("heartable.StructType")
 local tableMod = require("heartable.table")
 local TagType = require("heartable.TagType")
+local lton = require("lton")
 
 local keys = assert(tableMod.keys)
 
@@ -18,8 +18,11 @@ function M:init()
   self.dataTypes = {}
   self.componentTypes = {}
 
-  self.entityTables = {}
-  self.entityTableRoot = {}
+  self.tablets = {}
+  self.tabletRoot = {}
+
+  self.doubleType = PrimitiveType.new("double")
+
   self:bootstrap()
 end
 
@@ -39,26 +42,54 @@ function M:bootstrap()
 end
 
 function M:addEntity(components)
-  for k, v in pairs(components) do
-    print(k, v)
-  end
-
   local entity = self.nextEntity
   self.nextEntity = entity + 1
 
-  local entityType = keys(components)
-  table.sort(entityType)
+  local archetype = keys(components)
+  table.sort(archetype)
+
+  local tablet = self:addTablet(archetype)
+  local shard = tablet.shards[#tablet.shards]
+
+  if shard == nil or shard.size == shard.capacity then
+    local entities = self.doubleType:allocateArray(tablet.shardCapacity)
+    local columns = {}
+
+    for _, columnType in ipairs(tablet.columnTypes) do
+      local column = columnType:allocateArray(tablet.shardCapacity)
+      table.insert(columns, column)
+    end
+
+    shard = {
+      capacity = tablet.shardCapacity,
+      size = 0,
+      garbage = 0,
+
+      entities = entities,
+      columns = columns,
+    }
+
+    table.insert(tablet.shards, shard)
+  end
+
+  local rowIndex = shard.size
+  shard.size = shard.size + 1
+
+  shard.entities[rowIndex] = entity
 
   local row = {}
 
-  for i, component in ipairs(entityType) do
+  for i, component in ipairs(archetype) do
+    local column = shard.columns[i]
     local value = components[component]
-    table.insert(row, value)
+    column[rowIndex] = value
   end
 
-  local entityTable = self:addEntityTable(entityType)
-  local rowIndex = entityTable:addRow(entity, row)
-  self.entities[entity] = {entityTable = entityTable, rowIndex = rowIndex}
+  self.entities[entity] = {
+    generation = 0,
+    shard = shard,
+    rowIndex = rowIndex,
+  }
 
   return entity
 end
@@ -67,21 +98,26 @@ function M:addComponent(entity, component, value)
 end
 
 function M:removeEntity(entity)
-  local entityTable, rowIndex = unpack(self.entities[entity])
-  local movedEntity = entityTable:removeRow(rowIndex)
+  local lifecycle = self.entities[entity]
+  local shard = lifecycle.shard
 
-  if movedEntity ~= 0 then
-    self.entities[movedEntity].rowIndex = rowIndex
+  if not shard then
+    error("No such entity: " .. entity)
   end
 
-  self.entities[entity] = nil
+  if lifecycle.rowIndex == shard.size - 1 then
+    shard.size = shard.size - 1
+  else
+    shard.entities[lifecycle.rowIndex] = 0
+    shard.garbage = shard.garbage + 1
+  end
 end
 
-function M:addEntityTable(entityType)
+function M:addTablet(archetype)
   local previousComponent = 0
-  local node = self.entityTableRoot
+  local node = self.tabletRoot
 
-  for _, component in ipairs(entityType) do
+  for _, component in ipairs(archetype) do
     if component <= previousComponent then
       error("Invalid entity type")
     end
@@ -97,23 +133,31 @@ function M:addEntityTable(entityType)
     previousComponent = component
   end
 
-  local entityTable = node[0]
+  local tablet = node[0]
 
-  if not entityTable then
+  if not tablet then
+    print("Adding tablet: " .. table.concat(archetype, ", "))
+
     local columnTypes = {}
 
-    for _, component in ipairs(entityType) do
+    for _, component in ipairs(archetype) do
       local componentType = assert(self.componentTypes[component])
       local dataType = assert(self.dataTypes[componentType])
       table.insert(columnTypes, dataType)
     end
 
-    entityTable = EntityTable.new(entityType, columnTypes)
-    table.insert(self.entityTables, entityTable)
-    node[0] = entityTable
+    tablet = {
+      archetype = archetype,
+      columnTypes = columnTypes,
+      shardCapacity = 256,
+      shards = {},
+    }
+
+    table.insert(self.tablets, tablet)
+    node[0] = tablet
   end
 
-  return entityTable
+  return tablet
 end
 
 function M:handleEvent(event, ...)
