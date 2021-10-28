@@ -7,6 +7,7 @@ local TagType = require("heartable.TagType")
 local lton = require("lton")
 
 local keys = assert(tableMod.keys)
+local keySet = assert(tableMod.keySet)
 
 local M = Class.new()
 
@@ -35,15 +36,14 @@ function M:bootstrap()
   self.dataTypes.tag = TagType.new()
 
   self.componentTypes.name = "string"
+  self.componentTypes.dataType = "string"
 end
 
 function M:addEntity(components)
   local entity = self.nextEntity
   self.nextEntity = entity + 1
 
-  local archetype = keys(components)
-  table.sort(archetype)
-
+  local archetype = keySet(components)
   local tablet = self:addTablet(archetype)
   local shard = tablet.shards[#tablet.shards]
 
@@ -51,11 +51,15 @@ function M:addEntity(components)
     local entities = self.doubleType:allocateArray(tablet.shardSize)
     local columns = {}
 
-    for _, component in ipairs(tablet.archetype) do
+    for component in pairs(tablet.archetype) do
       local typeName = self.componentTypes[component]
+
+      if not typeName then
+        error("No such component: " .. component)
+      end
+
       local dataType = self.dataTypes[typeName]
-      local column = dataType:allocateArray(tablet.shardSize)
-      table.insert(columns, column)
+      columns[component] = dataType:allocateArray(tablet.shardSize)
     end
 
     shard = {
@@ -76,10 +80,8 @@ function M:addEntity(components)
 
   shard.entities[rowIndex] = entity
 
-  local row = {}
-
-  for i, component in ipairs(archetype) do
-    local column = shard.columns[i]
+  for component in pairs(archetype) do
+    local column = shard.columns[component]
     local value = components[component]
     column[rowIndex] = value
   end
@@ -116,14 +118,12 @@ function M:removeEntity(entity)
 end
 
 function M:addTablet(archetype)
-  local previousComponent = ""
   local node = self.tabletRoot
 
-  for _, component in ipairs(archetype) do
-    if component <= previousComponent then
-      error("Invalid archetype")
-    end
+  local components = keys(archetype)
+  table.sort(components)
 
+  for _, component in ipairs(components) do
     local nextNode = node[component]
 
     if nextNode == nil then
@@ -132,13 +132,12 @@ function M:addTablet(archetype)
     end
 
     node = nextNode
-    previousComponent = component
   end
 
   local tablet = node[0]
 
   if not tablet then
-    print("Adding tablet: " .. table.concat(archetype, ", "))
+    print("Adding tablet: " .. table.concat(keys(archetype), ", "))
 
     tablet = {
       archetype = archetype,

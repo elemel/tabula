@@ -6,13 +6,7 @@ function M:init()
 end
 
 function M:allocateArray(size)
-  local result = {}
-
-  for i = 0, size - 1 do
-    result[i] = ""
-  end
-
-  return result
+  return {}
 end
 
 return M
