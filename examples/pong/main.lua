@@ -2,42 +2,7 @@ local World = require("heartable.World")
 local StructType = require("heartable.StructType")
 local ValueType = require("heartable.ValueType")
 
-function love.load()
-  love.window.setTitle("Pong")
-
-  world = World.new()
-
-  world.dataTypes.value = ValueType.new()
-  world.componentTypes.struct = "value"
-
-  world:addEntity({name = "vec2", struct = {x = "float", y = "float"}})
-  world.dataTypes.vec2 = StructType.new("vec2", {x = "float", y = "float"})
-
-  world:addEntity({name = "position", dataType = "vec2"})
-  world.componentTypes.position = "vec2"
-
-  world:addEntity({name = "box", dataType = "vec2"})
-  world.componentTypes.box = "vec2"
-
-  world:addEntity({name = "isPaddle", dataType = "tag"})
-  world.componentTypes.isPaddle = "tag"
-
-  world:addEntity({
-    isPaddle = true,
-    position = {x = 100, y = 300},
-    box = {x = 10, y = 50}
-  })
-
-  world:addEntity({
-    isPaddle = true,
-    position = {x = 700, y = 300},
-    box = {x = 10, y = 50}
-  })
-end
-
-function love.draw(...)
-  -- world:handleEvent("draw", ...)
-
+function drawBoxes(world)
   for _, tablet in pairs(world.tablets) do
     if tablet.archetype.position and tablet.archetype.box then
       for _, shard in pairs(tablet.shards) do
@@ -60,6 +25,49 @@ function love.draw(...)
       end
     end
   end
+end
+
+function love.load()
+  love.window.setTitle("Pong")
+
+  world = World.new()
+
+  world.dataTypes.value = ValueType.new()
+  world.componentTypes.struct = "value"
+
+  world.dataTypes.vec2 = StructType.new("vec2", [[
+    float x, y;
+  ]])
+
+  world:addEntity({name = "position", dataType = "vec2"})
+  world.componentTypes.position = "vec2"
+
+  world:addEntity({name = "box", dataType = "vec2"})
+  world.componentTypes.box = "vec2"
+
+  world:addEntity({name = "isPaddle", dataType = "tag"})
+  world.componentTypes.isPaddle = "tag"
+
+  world:addEntity({
+    isPaddle = true,
+    position = {x = 100, y = 300},
+    box = {x = 10, y = 50}
+  })
+
+  world:addEntity({
+    isPaddle = true,
+    position = {x = 700, y = 300},
+    box = {x = 10, y = 50}
+  })
+
+  world:addEvent("draw")
+  world:addEvent("update")
+
+  world:addSystem("draw", drawBoxes)
+end
+
+function love.draw(...)
+  world:handleEvent("draw", ...)
 end
 
 function love.update(...)

@@ -24,6 +24,8 @@ function M:init()
 
   self.doubleType = PrimitiveType.new("double")
 
+  self.eventSystems = {}
+
   self:bootstrap()
 end
 
@@ -156,7 +158,33 @@ function M:addTablet(archetype)
   return tablet
 end
 
+function M:addEvent(event)
+  if self.eventSystems[event] then
+    error("Duplicate event: " .. event)
+  end
+
+  self.eventSystems[event] = {}
+end
+
+function M:addSystem(event, system)
+  if not self.eventSystems[event] then
+    error("No such event: " .. event)
+  end
+
+  assert(type(system) == "function", "Invalid system")
+  table.insert(self.eventSystems, system)
+end
+
 function M:handleEvent(event, ...)
+  local systems = self.eventSystems[event]
+
+  if not systems then
+    error("No such event: " .. event)
+  end
+
+  for _, system in ipairs(systems) do
+    system(self, ...)
+  end
 end
 
 return M
