@@ -19,9 +19,17 @@ function M:init()
   self.dataTypes = {}
   self.componentTypes = {}
 
-  self.tablets = {}
-  self.tabletRoot = {}
+  self.rootTablet = {
+    archetype = {},
 
+    shardSize = 256,
+    shards = {},
+
+    parents = {},
+    children = {},
+  }
+
+  self.tablets = {self.rootTablet}
   self.doubleType = PrimitiveType.new("double")
 
   self.eventSystems = {}
@@ -120,39 +128,41 @@ function M:removeEntity(entity)
 end
 
 function M:addTablet(archetype)
-  local node = self.tabletRoot
+  local tablet = self.rootTablet
 
   local components = keys(archetype)
   table.sort(components)
 
-  for _, component in ipairs(components) do
-    local nextNode = node[component]
+  for i, component in ipairs(components) do
+    local childTablet = tablet.children[component]
 
-    if nextNode == nil then
-      nextNode = {}
-      node[component] = nextNode
+    if not childTablet then
+      local childArchetype = {}
+
+      for j = 1, i do
+        local childComponent = components[j]
+        childArchetype[childComponent] = true
+      end
+
+      print("Adding tablet: " .. table.concat(keys(childArchetype), ", "))
+
+      childTablet = {
+        archetype = childArchetype,
+
+        shardSize = 256,
+        shards = {},
+
+        parents = {},
+        children = {},
+      }
+
+      tablet.children[component] = childTablet
+      childTablet.parents[component] = tablet
+
+      table.insert(self.tablets, childTablet)
     end
 
-    node = nextNode
-  end
-
-  local tablet = node[0]
-
-  if not tablet then
-    print("Adding tablet: " .. table.concat(keys(archetype), ", "))
-
-    tablet = {
-      archetype = archetype,
-
-      shardSize = 256,
-      shards = {},
-
-      parents = {},
-      children = {},
-    }
-
-    table.insert(self.tablets, tablet)
-    node[0] = tablet
+    tablet = childTablet
   end
 
   return tablet
@@ -172,7 +182,7 @@ function M:addSystem(event, system)
   end
 
   assert(type(system) == "function", "Invalid system")
-  table.insert(self.eventSystems, system)
+  table.insert(self.eventSystems[event], system)
 end
 
 function M:handleEvent(event, ...)
