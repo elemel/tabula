@@ -1,10 +1,10 @@
 local Class = require("heartable.Class")
 local PrimitiveType = require("heartable.PrimitiveType")
-local StringType = require("heartable.StringType")
 local StructType = require("heartable.StructType")
 local tableMod = require("heartable.table")
 local TagType = require("heartable.TagType")
 local lton = require("lton")
+local ValueType = require("heartable.ValueType")
 
 local keys = assert(tableMod.keys)
 local keySet = assert(tableMod.keySet)
@@ -12,13 +12,6 @@ local keySet = assert(tableMod.keySet)
 local M = Class.new()
 
 function M:init()
-  self.nextEntity = 1
-  self.entities = {}
-
-  self.names = {}
-  self.dataTypes = {}
-  self.componentTypes = {}
-
   self.rootTablet = {
     archetype = {},
 
@@ -30,23 +23,31 @@ function M:init()
   }
 
   self.tablets = {self.rootTablet}
-  self.doubleType = PrimitiveType.new("double")
 
+  self.nextEntity = 1
+  self.entities = {}
+
+  self.dataTypes = {}
+  self.componentTypes = {}
+  self.names = {}
   self.eventSystems = {}
 
   self:bootstrap()
 end
 
 function M:bootstrap()
-  self.names.name = self:addEntity({})
-  self.names.string = self:addEntity({})
-  self.names.tag = self:addEntity({})
-
-  self.dataTypes.string = StringType.new()
+  self.dataTypes.int = PrimitiveType.new("int32_t")
   self.dataTypes.tag = TagType.new()
+  self.dataTypes.value = ValueType.new()
 
-  self.componentTypes.name = "string"
-  self.componentTypes.dataType = "string"
+  self.componentTypes.dataType = "value"
+  self.componentTypes.name = "value"
+
+  self.names.int = self:addEntity({})
+  self.names.dataType = self:addEntity({})
+  self.names.name = self:addEntity({})
+  self.names.tag = self:addEntity({})
+  self.names.value = self:addEntity({})
 end
 
 function M:addEntity(components)
@@ -58,7 +59,7 @@ function M:addEntity(components)
   local shard = tablet.shards[#tablet.shards]
 
   if shard == nil or shard.rowCount == tablet.shardSize then
-    local entities = self.doubleType:allocateArray(tablet.shardSize)
+    local entities = self.dataTypes.int:allocateArray(tablet.shardSize)
     local columns = {}
 
     for component in pairs(tablet.archetype) do
