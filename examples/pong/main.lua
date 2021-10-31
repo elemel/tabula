@@ -92,10 +92,14 @@ function updateWallCollisions(world, dt)
                 velocities[i].y = -velocities[i].y
               end
 
-              if positions[i].x - 0.5 * boxes[i].x < 0 and velocities[i].x < 0 then
-                velocities[i].x = -velocities[i].x
-              elseif positions[i].x + 0.5 * boxes[i].x > 800 and velocities[i].x > 0 then
-                velocities[i].x = -velocities[i].x
+              if velocities[i].x < 0 then
+                if positions[i].x + 0.5 * boxes[i].x <= 0 then
+                  positions[i].x = positions[i].x + 800 + boxes[i].x
+                end
+              else
+                if positions[i].x - 0.5 * boxes[i].x >= 800 then
+                  positions[i].x = positions[i].x - 800 - boxes[i].x
+                end
               end
             end
           end
@@ -121,13 +125,13 @@ function updatePaddleBallCollisions(world, paddlePosition, paddleBox)
               if positions[i].y - 0.5 * boxes[i].y < paddlePosition.y + 0.5 * paddleBox.y and
                 positions[i].y + 0.5 * boxes[i].y > paddlePosition.y - 0.5 * paddleBox.y then
 
-                if velocities[i].x < 0 then
+                if velocities[i].x < 0 and positions[i].x < 400 then
                   if previousPositions[i].x - 0.5 * boxes[i].x >= paddlePosition.x + 0.5 * paddleBox.x and
                     positions[i].x - 0.5 * boxes[i].x < paddlePosition.x + 0.5 * paddleBox.x then
 
                     velocities[i].x = -velocities[i].x
                   end
-                else
+                elseif velocities[i].x > 0 and positions[i].x > 400 then
                   if previousPositions[i].x + 0.5 * boxes[i].x <= paddlePosition.x - 0.5 * paddleBox.x and
                     positions[i].x + 0.5 * boxes[i].x > paddlePosition.x - 0.5 * paddleBox.x then
 
@@ -169,8 +173,8 @@ function drawFps(world)
 end
 
 function love.load()
-  love.window.setTitle("Pong")
   love.mouse.setVisible(false)
+  love.graphics.setBlendMode("add")
 
   world = World.new()
 
@@ -210,14 +214,14 @@ function love.load()
 
   world:addEntity({
     box = {10, 50},
-    color = {1, 0.5, 0, 1},
+    color = {1, 0.3, 0, 1},
     isPaddle = true,
     position = {100, 300},
   })
 
   world:addEntity({
     box = {10, 50},
-    color = {0, 0.5, 1, 1},
+    color = {0, 0.6, 1, 1},
     isPaddle = true,
     isPlayer = true,
     position = {700, 300},
@@ -226,7 +230,7 @@ function love.load()
   local centerX = love.math.randomNormal(100, 400)
   local centerY = love.math.randomNormal(100, 300)
 
-  for i = 1, 100 do
+  for i = 1, 1000 do
     local positionAngle = love.math.random() * 2 * math.pi
     local positionRadius = love.math.randomNormal(100)
 
@@ -240,13 +244,13 @@ function love.load()
     local velocityX = math.cos(velocityAngle) * velocity
     local velocityY = math.sin(velocityAngle) * velocity
 
-    local h = love.math.random()
-    local s = love.math.random() * love.math.random()
-    local l = love.math.randomNormal(0.1, 0.5)
+    local h = love.math.randomNormal(0.05, 0.1)
+    local s = love.math.randomNormal(0.1, 0.6)
+    local l = love.math.randomNormal(0.1, 0.6)
 
     local r, g, b = colorMod.hslToRgb(h, s, l)
 
-    local a = 1 - love.math.random() * love.math.random()
+    local a = love.math.randomNormal(0.1, 0.5)
 
     world:addEntity({
       box = {10, 10},

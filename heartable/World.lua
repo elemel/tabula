@@ -8,10 +8,13 @@ local ValueType = require("heartable.ValueType")
 
 local keys = assert(tableMod.keys)
 local keySet = assert(tableMod.keySet)
+local sortedKeys = assert(tableMod.sortedKeys)
 
 local M = Class.new()
 
 function M:init()
+  print("Adding tablet for root archetype {}")
+
   self.rootTablet = {
     archetype = {},
 
@@ -59,6 +62,8 @@ function M:addEntity(components)
   local shard = tablet.shards[#tablet.shards]
 
   if shard == nil or shard.rowCount == tablet.shardSize then
+    print("Adding shard #" .. (#tablet.shards + 1) .. " for archetype {" .. table.concat(sortedKeys(tablet.archetype), ", ") .. "}")
+
     local entities = self.dataTypes.int:allocateArray(tablet.shardSize)
     local columns = {}
 
@@ -145,7 +150,7 @@ function M:addTablet(archetype)
         childArchetype[childComponent] = true
       end
 
-      print("Adding tablet: " .. table.concat(keys(childArchetype), ", "))
+      print("Adding tablet for archetype {" .. table.concat(sortedKeys(childArchetype), ", ") .. "}")
 
       childTablet = {
         archetype = childArchetype,

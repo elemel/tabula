@@ -79,4 +79,15 @@ function M.copyArray(source, i, n, destination, j)
   end
 end
 
+function M.sortedKeys(t, result)
+  result = result or {}
+
+  for k in pairs(t) do
+    table.insert(result, k)
+  end
+
+  table.sort(result)
+  return result
+end
+
 return M
