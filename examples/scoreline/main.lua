@@ -1,170 +1,94 @@
+local Query = require("heartable.Query")
 local World = require("heartable.World")
 local StructType = require("heartable.StructType")
 local ValueType = require("heartable.ValueType")
 local colorMod = require("heartable.color")
 
 function drawBoxes(world)
-  for _, tablet in pairs(world.tablets) do
-    if tablet.archetype.position and tablet.archetype.box and tablet.archetype.color then
-      for _, shard in pairs(tablet.shards) do
-        if shard.rowCount >= 1 then
-          local entities = shard.entities
-          local positions = shard.columns.position
-          local boxes = shard.columns.box
-          local colors = shard.columns.color
+  world.queries.drawBoxes:eachRow(function(i, entities,
+    boxes, colors, positions)
 
-          for i = 0, shard.rowCount - 1 do
-            if entities[i] ~= 0 then
-              love.graphics.setColor(colors[i].r, colors[i].g, colors[i].b, colors[i].a)
+    love.graphics.setColor(colors[i].r, colors[i].g, colors[i].b, colors[i].a)
 
-              love.graphics.rectangle(
-                "fill",
-                positions[i].x - 0.5 * boxes[i].x,
-                positions[i].y - 0.5 * boxes[i].y,
-                boxes[i].x,
-                boxes[i].y)
-            end
-          end
-        end
-      end
-    end
-  end
+    love.graphics.rectangle(
+      "fill",
+      positions[i].x - 0.5 * boxes[i].x,
+      positions[i].y - 0.5 * boxes[i].y,
+      boxes[i].x,
+      boxes[i].y)
+  end)
 end
 
 function handleMouseMoved(world, x, y, dx, dy, isTouch)
-  for _, tablet in pairs(world.tablets) do
-    if tablet.archetype.position and tablet.archetype.isPaddle and tablet.archetype.isPlayer then
-      for _, shard in pairs(tablet.shards) do
-        if shard.rowCount >= 1 then
-          local entities = shard.entities
-          local positions = shard.columns.position
+  world.queries.handleMouseMoved:eachRow(function(i, entities,
+    positions)
 
-          for i = 0, shard.rowCount - 1 do
-            if entities[i] ~= 0 then
-              positions[i].y = y
-            end
-          end
-        end
-      end
-    end
-  end
+    positions[i].y = y
+  end)
 end
 
 function updateVelocityPositions(world, dt)
-  for _, tablet in pairs(world.tablets) do
-    if tablet.archetype.position and tablet.archetype.previousPosition and tablet.archetype.velocity then
-      for _, shard in pairs(tablet.shards) do
-        if shard.rowCount >= 1 then
-          local entities = shard.entities
-          local previousPositions = shard.columns.previousPosition
-          local positions = shard.columns.position
-          local velocities = shard.columns.velocity
+  world.queries.updateVelocityPositions:eachRow(function(i, entities,
+    positions, previousPositions, velocities)
 
-          for i = 0, shard.rowCount - 1 do
-            if entities[i] ~= 0 then
-              previousPositions[i] = positions[i]
+    previousPositions[i] = positions[i]
 
-              positions[i].x = positions[i].x + velocities[i].x * dt
-              positions[i].y = positions[i].y + velocities[i].y * dt
-            end
-          end
-        end
-      end
-    end
-  end
+    positions[i].x = positions[i].x + velocities[i].x * dt
+    positions[i].y = positions[i].y + velocities[i].y * dt
+  end)
 end
 
 function updateWallCollisions(world, dt)
-  for _, tablet in pairs(world.tablets) do
-    if tablet.archetype.position and tablet.archetype.velocity and tablet.archetype.box and tablet.archetype.isBall then
-      for _, shard in pairs(tablet.shards) do
-        if shard.rowCount >= 1 then
-          local entities = shard.entities
-          local positions = shard.columns.position
-          local velocities = shard.columns.velocity
-          local boxes = shard.columns.box
+  world.queries.updateWallCollisions:eachRow(function(i, entities,
+    boxes, positions, velocities)
 
-          for i = 0, shard.rowCount - 1 do
-            if entities[i] ~= 0 then
-              if positions[i].y - 0.5 * boxes[i].y < 0 and velocities[i].y < 0 then
-                velocities[i].y = -velocities[i].y
-              elseif positions[i].y + 0.5 * boxes[i].y > 600 and velocities[i].y > 0 then
-                velocities[i].y = -velocities[i].y
-              end
+    if positions[i].y - 0.5 * boxes[i].y < 0 and velocities[i].y < 0 then
+      velocities[i].y = -velocities[i].y
+    elseif positions[i].y + 0.5 * boxes[i].y > 600 and velocities[i].y > 0 then
+      velocities[i].y = -velocities[i].y
+    end
 
-              if velocities[i].x < 0 then
-                if positions[i].x + 0.5 * boxes[i].x <= 0 then
-                  positions[i].x = positions[i].x + 800 + boxes[i].x
-                end
-              else
-                if positions[i].x - 0.5 * boxes[i].x >= 800 then
-                  positions[i].x = positions[i].x - 800 - boxes[i].x
-                end
-              end
-            end
-          end
-        end
+    if velocities[i].x < 0 then
+      if positions[i].x + 0.5 * boxes[i].x <= 0 then
+        positions[i].x = positions[i].x + 800 + boxes[i].x
+      end
+    else
+      if positions[i].x - 0.5 * boxes[i].x >= 800 then
+        positions[i].x = positions[i].x - 800 - boxes[i].x
       end
     end
-  end
-end
-
-function updatePaddleBallCollisions(world, paddlePosition, paddleBox)
-  for _, tablet in pairs(world.tablets) do
-    if tablet.archetype.previousPosition and tablet.archetype.position and tablet.archetype.velocity and tablet.archetype.box and tablet.archetype.isBall then
-      for _, shard in pairs(tablet.shards) do
-        if shard.rowCount >= 1 then
-          local entities = shard.entities
-          local previousPositions = shard.columns.previousPosition
-          local positions = shard.columns.position
-          local velocities = shard.columns.velocity
-          local boxes = shard.columns.box
-
-          for i = 0, shard.rowCount - 1 do
-            if entities[i] ~= 0 then
-              if positions[i].y - 0.5 * boxes[i].y < paddlePosition.y + 0.5 * paddleBox.y and
-                positions[i].y + 0.5 * boxes[i].y > paddlePosition.y - 0.5 * paddleBox.y then
-
-                if velocities[i].x < 0 and positions[i].x < 400 then
-                  if previousPositions[i].x - 0.5 * boxes[i].x >= paddlePosition.x + 0.5 * paddleBox.x and
-                    positions[i].x - 0.5 * boxes[i].x < paddlePosition.x + 0.5 * paddleBox.x then
-
-                    velocities[i].x = -velocities[i].x
-                  end
-                elseif velocities[i].x > 0 and positions[i].x > 400 then
-                  if previousPositions[i].x + 0.5 * boxes[i].x <= paddlePosition.x - 0.5 * paddleBox.x and
-                    positions[i].x + 0.5 * boxes[i].x > paddlePosition.x - 0.5 * paddleBox.x then
-
-                    velocities[i].x = -velocities[i].x
-                  end
-                end
-              end
-            end
-          end
-        end
-      end
-    end
-  end
+  end)
 end
 
 function updatePaddleCollisions(world, dt)
-  for _, tablet in pairs(world.tablets) do
-    if tablet.archetype.position and tablet.archetype.box and tablet.archetype.isPaddle then
-      for _, shard in pairs(tablet.shards) do
-        if shard.rowCount >= 1 then
-          local paddleEntities = shard.entities
-          local paddlePositions = shard.columns.position
-          local padddleBoxes = shard.columns.box
+  world.queries.updatePaddleCollisions:eachRow(function(i, entities,
+    boxes, positions)
 
-          for i = 0, shard.rowCount - 1 do
-            if paddleEntities[i] ~= 0 then
-              updatePaddleBallCollisions(world, paddlePositions[i], padddleBoxes[i])
-            end
+    local paddleBox = boxes[i]
+    local paddlePosition = positions[i]
+
+    world.queries.updatePaddleBallCollisions:eachRow(function(i, entities,
+      boxes, positions, previousPositions, velocities)
+
+      if positions[i].y - 0.5 * boxes[i].y < paddlePosition.y + 0.5 * paddleBox.y and
+        positions[i].y + 0.5 * boxes[i].y > paddlePosition.y - 0.5 * paddleBox.y then
+
+        if velocities[i].x < 0 and positions[i].x < 400 then
+          if previousPositions[i].x - 0.5 * boxes[i].x >= paddlePosition.x + 0.5 * paddleBox.x and
+            positions[i].x - 0.5 * boxes[i].x < paddlePosition.x + 0.5 * paddleBox.x then
+
+            velocities[i].x = -velocities[i].x
+          end
+        elseif velocities[i].x > 0 and positions[i].x > 400 then
+          if previousPositions[i].x + 0.5 * boxes[i].x <= paddlePosition.x - 0.5 * paddleBox.x and
+            positions[i].x + 0.5 * boxes[i].x > paddlePosition.x - 0.5 * paddleBox.x then
+
+            velocities[i].x = -velocities[i].x
           end
         end
       end
-    end
-  end
+    end)
+  end)
 end
 
 function drawFps(world)
@@ -272,6 +196,30 @@ function love.load()
   world:addSystem("update", updateVelocityPositions)
   world:addSystem("update", updateWallCollisions)
   world:addSystem("update", updatePaddleCollisions)
+
+  world.queries.drawBoxes = Query.new(world, {
+    allOf = {"box", "color", "position"},
+  })
+
+  world.queries.handleMouseMoved = Query.new(world, {
+    allOf = {"position", "isPaddle", "isPlayer"},
+  })
+
+  world.queries.updateVelocityPositions = Query.new(world, {
+    allOf = {"position", "previousPosition", "velocity"},
+  })
+
+  world.queries.updateWallCollisions = Query.new(world, {
+    allOf = {"box", "position", "velocity", "isBall"},
+  })
+
+  world.queries.updatePaddleCollisions = Query.new(world, {
+    allOf = {"box", "position", "isPaddle"},
+  })
+
+  world.queries.updatePaddleBallCollisions = Query.new(world, {
+    allOf = {"box", "position", "previousPosition", "velocity", "isBall"},
+  })
 end
 
 function love.draw(...)

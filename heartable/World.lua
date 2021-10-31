@@ -34,6 +34,7 @@ function M:init()
   self.componentTypes = {}
   self.names = {}
   self.eventSystems = {}
+  self.queries = {}
 
   self:bootstrap()
 end
