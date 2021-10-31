@@ -1,61 +1,81 @@
 local Class = require("heartable.Class")
 local PrimitiveType = require("heartable.PrimitiveType")
-local StringType = require("heartable.StringType")
 local StructType = require("heartable.StructType")
 local tableMod = require("heartable.table")
 local TagType = require("heartable.TagType")
 local lton = require("lton")
+local ValueType = require("heartable.ValueType")
 
 local keys = assert(tableMod.keys)
+local keySet = assert(tableMod.keySet)
+local sortedKeys = assert(tableMod.sortedKeys)
 
 local M = Class.new()
 
 function M:init()
+  print("Adding tablet for root archetype {}")
+
+  self.rootTablet = {
+    archetype = {},
+
+    shardSize = 256,
+    shards = {},
+
+    parents = {},
+    children = {},
+  }
+
+  self.tablets = {self.rootTablet}
+
   self.nextEntity = 1
   self.entities = {}
 
-  self.names = {}
   self.dataTypes = {}
   self.componentTypes = {}
-
-  self.tablets = {}
-  self.tabletRoot = {}
-
-  self.doubleType = PrimitiveType.new("double")
+  self.names = {}
+  self.eventSystems = {}
 
   self:bootstrap()
 end
 
 function M:bootstrap()
-  self.names.name = self:addEntity({})
-  self.names.string = self:addEntity({})
-  self.names.tag = self:addEntity({})
-
-  self.dataTypes.string = StringType.new()
+  self.dataTypes.int = PrimitiveType.new("int32_t")
   self.dataTypes.tag = TagType.new()
+  self.dataTypes.value = ValueType.new()
 
-  self.componentTypes.name = "string"
+  self.componentTypes.dataType = "value"
+  self.componentTypes.name = "value"
+
+  self.names.int = self:addEntity({})
+  self.names.dataType = self:addEntity({})
+  self.names.name = self:addEntity({})
+  self.names.tag = self:addEntity({})
+  self.names.value = self:addEntity({})
 end
 
 function M:addEntity(components)
   local entity = self.nextEntity
   self.nextEntity = entity + 1
 
-  local archetype = keys(components)
-  table.sort(archetype)
-
+  local archetype = keySet(components)
   local tablet = self:addTablet(archetype)
   local shard = tablet.shards[#tablet.shards]
 
   if shard == nil or shard.rowCount == tablet.shardSize then
-    local entities = self.doubleType:allocateArray(tablet.shardSize)
+    print("Adding shard #" .. (#tablet.shards + 1) .. " for archetype {" .. table.concat(sortedKeys(tablet.archetype), ", ") .. "}")
+
+    local entities = self.dataTypes.int:allocateArray(tablet.shardSize)
     local columns = {}
 
-    for _, component in ipairs(tablet.archetype) do
+    for component in pairs(tablet.archetype) do
       local typeName = self.componentTypes[component]
+
+      if not typeName then
+        error("No such component: " .. component)
+      end
+
       local dataType = self.dataTypes[typeName]
-      local column = dataType:allocateArray(tablet.shardSize)
-      table.insert(columns, column)
+      columns[component] = dataType:allocateArray(tablet.shardSize)
     end
 
     shard = {
@@ -76,10 +96,8 @@ function M:addEntity(components)
 
   shard.entities[rowIndex] = entity
 
-  local row = {}
-
-  for i, component in ipairs(archetype) do
-    local column = shard.columns[i]
+  for component in pairs(archetype) do
+    local column = shard.columns[component]
     local value = components[component]
     column[rowIndex] = value
   end
@@ -116,48 +134,73 @@ function M:removeEntity(entity)
 end
 
 function M:addTablet(archetype)
-  local previousComponent = ""
-  local node = self.tabletRoot
+  local tablet = self.rootTablet
 
-  for _, component in ipairs(archetype) do
-    if component <= previousComponent then
-      error("Invalid archetype")
+  local components = keys(archetype)
+  table.sort(components)
+
+  for i, component in ipairs(components) do
+    local childTablet = tablet.children[component]
+
+    if not childTablet then
+      local childArchetype = {}
+
+      for j = 1, i do
+        local childComponent = components[j]
+        childArchetype[childComponent] = true
+      end
+
+      print("Adding tablet for archetype {" .. table.concat(sortedKeys(childArchetype), ", ") .. "}")
+
+      childTablet = {
+        archetype = childArchetype,
+
+        shardSize = 256,
+        shards = {},
+
+        parents = {},
+        children = {},
+      }
+
+      tablet.children[component] = childTablet
+      childTablet.parents[component] = tablet
+
+      table.insert(self.tablets, childTablet)
     end
 
-    local nextNode = node[component]
-
-    if nextNode == nil then
-      nextNode = {}
-      node[component] = nextNode
-    end
-
-    node = nextNode
-    previousComponent = component
-  end
-
-  local tablet = node[0]
-
-  if not tablet then
-    print("Adding tablet: " .. table.concat(archetype, ", "))
-
-    tablet = {
-      archetype = archetype,
-
-      shardSize = 256,
-      shards = {},
-
-      parents = {},
-      children = {},
-    }
-
-    table.insert(self.tablets, tablet)
-    node[0] = tablet
+    tablet = childTablet
   end
 
   return tablet
 end
 
+function M:addEvent(event)
+  if self.eventSystems[event] then
+    error("Duplicate event: " .. event)
+  end
+
+  self.eventSystems[event] = {}
+end
+
+function M:addSystem(event, system)
+  if not self.eventSystems[event] then
+    error("No such event: " .. event)
+  end
+
+  assert(type(system) == "function", "Invalid system")
+  table.insert(self.eventSystems[event], system)
+end
+
 function M:handleEvent(event, ...)
+  local systems = self.eventSystems[event]
+
+  if not systems then
+    error("No such event: " .. event)
+  end
+
+  for _, system in ipairs(systems) do
+    system(self, ...)
+  end
 end
 
 return M

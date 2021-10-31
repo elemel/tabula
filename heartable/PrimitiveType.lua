@@ -5,6 +5,8 @@ local M = Class.new()
 
 function M:init(name)
   self.name = assert(name)
+
+  self.primitiveType = ffi.typeof(self.name)
   self.arrayType = ffi.typeof(self.name .. "[?]")
 end
 

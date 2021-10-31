@@ -41,8 +41,18 @@ end
 function M.keys(t, result)
   result = result or {}
 
-  for k, v in pairs(t) do
-    result[#result + 1] = k
+  for k in pairs(t) do
+    table.insert(result, k)
+  end
+
+  return result
+end
+
+function M.keySet(t, result)
+  result = result or {}
+
+  for k in pairs(t) do
+    result[k] = true
   end
 
   return result
@@ -51,8 +61,8 @@ end
 function M.values(t, result)
   result = result or {}
 
-  for k, v in pairs(t) do
-    result[#result + 1] = v
+  for _, v in pairs(t) do
+    table.insert(result, v)
   end
 
   return result
@@ -67,6 +77,17 @@ function M.copyArray(source, i, n, destination, j)
   for k = 0, n - 1 do
     destination[j + k] = source[i + k]
   end
+end
+
+function M.sortedKeys(t, result)
+  result = result or {}
+
+  for k in pairs(t) do
+    table.insert(result, k)
+  end
+
+  table.sort(result)
+  return result
 end
 
 return M

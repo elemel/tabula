@@ -3,19 +3,13 @@ local ffi = require("ffi")
 
 local M = Class.new()
 
-function M:init(name, fields)
+function M:init(name, members)
   self.name = assert(name)
 
-  local fieldDecls = {}
-
-  for fieldName, fieldType in pairs(fields) do
-    local fieldDecl = fieldType .. " " .. fieldName .. ";"
-    table.insert(fieldDecls, fieldDecl)
-  end
-
-  local structDecl = "typedef struct " .. self.name .. " {\n  " .. table.concat(fieldDecls, "\n  ") .. "\n} " .. self.name .. ";"
-
+  local structDecl = "typedef struct " .. self.name .. " { " .. members .. " } " .. self.name .. ";"
   ffi.cdef(structDecl)
+
+  self.structType = ffi.typeof(self.name)
   self.arrayType = ffi.typeof(self.name .. "[?]")
 end
 
