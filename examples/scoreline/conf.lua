@@ -1,4 +1,4 @@
 function love.conf(t)
-  t.window.title = "Pong"
+  t.window.title = "Scoreline"
   t.gammacorrect = true
 end
