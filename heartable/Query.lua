@@ -126,6 +126,8 @@ function M:eachRow(callback)
     self:eachRow4(callback)
   elseif #self.allOf == 5 then
     self:eachRow5(callback)
+  elseif #self.allOf == 6 then
+    self:eachRow6(callback)
   else
     error("Too many components")
   end
@@ -274,6 +276,42 @@ function M:eachRow5(callback)
               column3,
               column4,
               column5)
+          end
+        end
+      end
+    end
+  end
+end
+
+function M:eachRow6(callback)
+  local component1 = self.allOf[1]
+  local component2 = self.allOf[2]
+  local component3 = self.allOf[3]
+  local component4 = self.allOf[4]
+  local component5 = self.allOf[5]
+  local component6 = self.allOf[6]
+
+  for _, tablet in ipairs(self.tablets) do
+    for _, shard in ipairs(tablet.shards) do
+      if shard.rowCount >= 1 then
+        local entities = shard.entities
+
+        local column1 = shard.columns[component1]
+        local column2 = shard.columns[component2]
+        local column3 = shard.columns[component3]
+        local column4 = shard.columns[component4]
+        local column5 = shard.columns[component5]
+        local column6 = shard.columns[component6]
+
+        for i = 0, shard.rowCount - 1 do
+          if entities[i] ~= 0 then
+            callback(i, entities,
+              column1,
+              column2,
+              column3,
+              column4,
+              column5,
+              column6)
           end
         end
       end

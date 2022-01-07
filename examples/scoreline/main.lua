@@ -5,7 +5,8 @@ local ValueType = require("heartable.ValueType")
 local colorMod = require("heartable.color")
 
 function drawBoxes(world)
-  world.queries.drawBoxes:eachRow(function(i, entities,
+  world.queries.drawBoxes:eachRow(function(
+    i, entities,
     boxes, colors, positions)
 
     love.graphics.setColor(colors[i].r, colors[i].g, colors[i].b, colors[i].a)
@@ -20,7 +21,8 @@ function drawBoxes(world)
 end
 
 function handleMouseMoved(world, x, y, dx, dy, isTouch)
-  world.queries.handleMouseMoved:eachRow(function(i, entities,
+  world.queries.handleMouseMoved:eachRow(function(
+    i, entities,
     positions)
 
     positions[i].y = y
@@ -28,7 +30,8 @@ function handleMouseMoved(world, x, y, dx, dy, isTouch)
 end
 
 function updateVelocityPositions(world, dt)
-  world.queries.updateVelocityPositions:eachRow(function(i, entities,
+  world.queries.updateVelocityPositions:eachRow(function(
+    i, entities,
     positions, previousPositions, velocities)
 
     previousPositions[i] = positions[i]
@@ -39,7 +42,8 @@ function updateVelocityPositions(world, dt)
 end
 
 function updateWallCollisions(world, dt)
-  world.queries.updateWallCollisions:eachRow(function(i, entities,
+  world.queries.updateWallCollisions:eachRow(function(
+    i, entities,
     boxes, positions, velocities)
 
     if positions[i].y - 0.5 * boxes[i].y < 0 and velocities[i].y < 0 then
@@ -61,14 +65,16 @@ function updateWallCollisions(world, dt)
 end
 
 function updatePaddleCollisions(world, dt)
-  world.queries.updatePaddleCollisions:eachRow(function(i, entities,
+  world.queries.updatePaddleCollisions:eachRow(function(
+    i, entities,
     boxes, positions)
 
     local paddleBox = boxes[i]
     local paddlePosition = positions[i]
 
-    world.queries.updatePaddleBallCollisions:eachRow(function(i, entities,
-      boxes, positions, previousPositions, velocities)
+    world.queries.updatePaddleBallCollisions:eachRow(function(
+      i, entities,
+      boxes, colors, positions, previousPositions, velocities)
 
       if positions[i].y - 0.5 * boxes[i].y < paddlePosition.y + 0.5 * paddleBox.y and
         positions[i].y + 0.5 * boxes[i].y > paddlePosition.y - 0.5 * paddleBox.y then
@@ -78,12 +84,18 @@ function updatePaddleCollisions(world, dt)
             positions[i].x - 0.5 * boxes[i].x < paddlePosition.x + 0.5 * paddleBox.x then
 
             velocities[i].x = -velocities[i].x
+
+            colors[i].r = velocities[i].x
+            colors[i].b = -velocities[i].x
           end
         elseif velocities[i].x > 0 and positions[i].x > 400 then
           if previousPositions[i].x + 0.5 * boxes[i].x <= paddlePosition.x - 0.5 * paddleBox.x and
             positions[i].x + 0.5 * boxes[i].x > paddlePosition.x - 0.5 * paddleBox.x then
 
             velocities[i].x = -velocities[i].x
+
+            colors[i].r = velocities[i].x
+            colors[i].b = -velocities[i].x
           end
         end
       end
@@ -138,23 +150,41 @@ function love.load()
 
   world:addEntity({
     box = {10, 50},
-    color = {1, 0.3, 0, 1},
+    color = {0.9, 0.3, 0.1, 1},
     isPaddle = true,
     position = {100, 300},
   })
 
   world:addEntity({
     box = {10, 50},
-    color = {0, 0.6, 1, 1},
+    color = {0, 0.5, 1, 1},
     isPaddle = true,
     isPlayer = true,
     position = {700, 300},
   })
 
+  world:addEntity({
+    box = {2, 600},
+    color = {0.2, 0.8, 0, 1},
+    position = {400, 300},
+  })
+
+  world:addEntity({
+    box = {2, 600},
+    color = {1, 0.3, 0.7, 1},
+    position = {0, 300},
+  })
+
+  world:addEntity({
+    box = {2, 600},
+    color = {0.7, 0.3, 1, 1},
+    position = {800, 300},
+  })
+
   local centerX = love.math.randomNormal(100, 400)
   local centerY = love.math.randomNormal(100, 300)
 
-  for i = 1, 1000 do
+  for i = 1, 100000 do
     local positionAngle = love.math.random() * 2 * math.pi
     local positionRadius = love.math.randomNormal(100)
 
@@ -190,7 +220,7 @@ function love.load()
   world:addEvent("mouseMoved")
   world:addEvent("update")
 
-  world:addSystem("draw", drawBoxes)
+  -- world:addSystem("draw", drawBoxes)
   world:addSystem("draw", drawFps)
   world:addSystem("mouseMoved", handleMouseMoved)
   world:addSystem("update", updateVelocityPositions)
@@ -218,7 +248,7 @@ function love.load()
   })
 
   world.queries.updatePaddleBallCollisions = Query.new(world, {
-    allOf = {"box", "position", "previousPosition", "velocity", "isBall"},
+    allOf = {"box", "color", "position", "previousPosition", "velocity", "isBall"},
   })
 end
 
