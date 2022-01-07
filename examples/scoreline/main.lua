@@ -184,7 +184,7 @@ function love.load()
   local centerX = love.math.randomNormal(100, 400)
   local centerY = love.math.randomNormal(100, 300)
 
-  for i = 1, 100000 do
+  for i = 1, 1000 do
     local positionAngle = love.math.random() * 2 * math.pi
     local positionRadius = love.math.randomNormal(100)
 
@@ -220,7 +220,7 @@ function love.load()
   world:addEvent("mouseMoved")
   world:addEvent("update")
 
-  -- world:addSystem("draw", drawBoxes)
+  world:addSystem("draw", drawBoxes)
   world:addSystem("draw", drawFps)
   world:addSystem("mouseMoved", handleMouseMoved)
   world:addSystem("update", updateVelocityPositions)
