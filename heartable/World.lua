@@ -63,33 +63,7 @@ function M:addEntity(components)
   local shard = tablet.shards[#tablet.shards]
 
   if shard == nil or shard.rowCount == tablet.shardSize then
-    print("Adding shard #" .. (#tablet.shards + 1) .. " for archetype {" .. table.concat(sortedKeys(tablet.archetype), ", ") .. "}")
-
-    local entities = self.dataTypes.int:allocateArray(tablet.shardSize)
-    local columns = {}
-
-    for component in pairs(tablet.archetype) do
-      local typeName = self.componentTypes[component]
-
-      if not typeName then
-        error("No such component: " .. component)
-      end
-
-      local dataType = self.dataTypes[typeName]
-      columns[component] = dataType:allocateArray(tablet.shardSize)
-    end
-
-    shard = {
-      tablet = tablet,
-
-      rowCount = 0,
-      tombstoneCount = 0,
-
-      entities = entities,
-      columns = columns,
-    }
-
-    table.insert(tablet.shards, shard)
+    shard = self:addShard(tablet)
   end
 
   local rowIndex = shard.rowCount
@@ -173,6 +147,37 @@ function M:addTablet(archetype)
   end
 
   return tablet
+end
+
+function M:addShard(tablet)
+  print("Adding shard #" .. (#tablet.shards + 1) .. " for archetype {" .. table.concat(sortedKeys(tablet.archetype), ", ") .. "}")
+
+  local entities = self.dataTypes.int:allocateArray(tablet.shardSize)
+  local columns = {}
+
+  for component in pairs(tablet.archetype) do
+    local typeName = self.componentTypes[component]
+
+    if not typeName then
+      error("No such component: " .. component)
+    end
+
+    local dataType = self.dataTypes[typeName]
+    columns[component] = dataType:allocateArray(tablet.shardSize)
+  end
+
+  shard = {
+    tablet = tablet,
+
+    rowCount = 0,
+    tombstoneCount = 0,
+
+    entities = entities,
+    columns = columns,
+  }
+
+  table.insert(tablet.shards, shard)
+  return shard
 end
 
 function M:addEvent(event)
