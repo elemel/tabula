@@ -13,7 +13,7 @@ local sortedKeys = assert(tableMod.sortedKeys)
 local M = Class.new()
 
 function M:init()
-  print("Adding tablet for root archetype {}")
+  print("Adding tablet for root archetype")
 
   self.rootTablet = {
     archetype = {},
@@ -40,7 +40,19 @@ function M:init()
 end
 
 function M:bootstrap()
+  self.dataTypes.byte = PrimitiveType.new("int8_t")
+  self.dataTypes.short = PrimitiveType.new("int16_t")
   self.dataTypes.int = PrimitiveType.new("int32_t")
+  self.dataTypes.long = PrimitiveType.new("int64_t")
+
+  self.dataTypes.unsignedByte = PrimitiveType.new("uint8_t")
+  self.dataTypes.unsignedShort = PrimitiveType.new("uint16_t")
+  self.dataTypes.unsignedInt = PrimitiveType.new("uint32_t")
+  self.dataTypes.unsignedLong = PrimitiveType.new("uint64_t")
+
+  self.dataTypes.float = PrimitiveType.new("float")
+  self.dataTypes.double = PrimitiveType.new("double")
+
   self.dataTypes.tag = TagType.new()
   self.dataTypes.value = ValueType.new()
 
@@ -109,19 +121,17 @@ function M:removeEntity(entity)
 end
 
 function M:addTablet(archetype)
-  local tablet = self.rootTablet
+  local parentTablet = self.rootTablet
+  local sortedComponents = sortedKeys(archetype)
 
-  local components = keys(archetype)
-  table.sort(components)
-
-  for i, component in ipairs(components) do
-    local childTablet = tablet.children[component]
+  for i, component in ipairs(sortedComponents) do
+    local childTablet = parentTablet.children[component]
 
     if not childTablet then
       local childArchetype = {}
 
       for j = 1, i do
-        local childComponent = components[j]
+        local childComponent = sortedComponents[j]
         childArchetype[childComponent] = true
       end
 
@@ -137,16 +147,16 @@ function M:addTablet(archetype)
         children = {},
       }
 
-      tablet.children[component] = childTablet
-      childTablet.parents[component] = tablet
+      parentTablet.children[component] = childTablet
+      childTablet.parents[component] = parentTablet
 
       table.insert(self.tablets, childTablet)
     end
 
-    tablet = childTablet
+    parentTablet = childTablet
   end
 
-  return tablet
+  return parentTablet
 end
 
 function M:addShard(tablet)
