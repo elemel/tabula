@@ -26,6 +26,7 @@ function M:init()
   }
 
   self.tablets = {self.rootTablet}
+  self.shards = {}
 
   self.nextEntity = 1
   self.entities = {}
@@ -91,7 +92,7 @@ function M:addEntity(components)
 
   self.entities[entity] = {
     generation = 0,
-    shard = shard,
+    shardIndex = shard.index,
     rowIndex = rowIndex,
   }
 
@@ -103,11 +104,13 @@ end
 
 function M:removeEntity(entity)
   local lifecycle = self.entities[entity]
-  local shard = lifecycle.shard
+  local shardIndex = lifecycle.shardIndex
 
-  if not shard then
+  if not shardIndex then
     error("No such entity: " .. entity)
   end
+
+  local shard = self.shards[shardIndex]
 
   if lifecycle.rowIndex == shard.rowCount - 1 then
     shard.rowCount = shard.rowCount - 1
@@ -117,7 +120,7 @@ function M:removeEntity(entity)
   end
 
   lifecycle.generation = lifecycle.generation + 1
-  lifecycle.shard = nil
+  lifecycle.shardIndex = nil
 end
 
 function M:addTablet(archetype)
@@ -160,7 +163,8 @@ function M:addTablet(archetype)
 end
 
 function M:addShard(tablet)
-  print("Adding shard #" .. (#tablet.shards + 1) .. " for archetype {" .. table.concat(sortedKeys(tablet.archetype), ", ") .. "}")
+  local shardIndex = #self.shards + 1
+  print("Adding shard #" .. shardIndex .. " for archetype {" .. table.concat(sortedKeys(tablet.archetype), ", ") .. "}")
 
   local entities = self.dataTypes.int:allocateArray(tablet.shardSize)
   local columns = {}
@@ -177,6 +181,7 @@ function M:addShard(tablet)
   end
 
   shard = {
+    index = shardIndex,
     tablet = tablet,
 
     rowCount = 0,
@@ -187,6 +192,7 @@ function M:addShard(tablet)
   }
 
   table.insert(tablet.shards, shard)
+  table.insert(self.shards, shard)
   return shard
 end
 
