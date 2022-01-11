@@ -28,8 +28,17 @@ function M:init()
   self.tablets = {self.rootTablet}
   self.shards = {}
 
-  self.nextEntity = 1
-  self.entities = {}
+  self.lifecycleType = StructType.new("lifecycle", [[
+    int16_t generation;
+    int16_t shardIndex;
+    int16_t rowIndex;
+  ]])
+
+  self.minEntity = 1
+  self.maxEntity = 1024 * 1024 - 1
+
+  self.entities = self.lifecycleType:allocateArray(self.maxEntity + 1)
+  self.nextEntity = self.minEntity
 
   self.dataTypes = {}
   self.componentTypes = {}
@@ -60,11 +69,11 @@ function M:bootstrap()
   self.componentTypes.dataType = "value"
   self.componentTypes.name = "value"
 
-  self.names.int = self:addEntity({})
-  self.names.dataType = self:addEntity({})
-  self.names.name = self:addEntity({})
-  self.names.tag = self:addEntity({})
-  self.names.value = self:addEntity({})
+  -- self.names.int = self:addEntity({})
+  -- self.names.dataType = self:addEntity({})
+  -- self.names.name = self:addEntity({})
+  -- self.names.tag = self:addEntity({})
+  -- self.names.value = self:addEntity({})
 end
 
 function M:addEntity(components)
@@ -106,7 +115,7 @@ function M:removeEntity(entity)
   local lifecycle = self.entities[entity]
   local shardIndex = lifecycle.shardIndex
 
-  if not shardIndex then
+  if shardIndex == 0 then
     error("No such entity: " .. entity)
   end
 
@@ -120,7 +129,7 @@ function M:removeEntity(entity)
   end
 
   lifecycle.generation = lifecycle.generation + 1
-  lifecycle.shardIndex = nil
+  lifecycle.shardIndex = 0
 end
 
 function M:addTablet(archetype)
