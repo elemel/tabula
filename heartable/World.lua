@@ -28,10 +28,12 @@ function M:init()
   self.tablets = {self.rootTablet}
   self.shards = {}
 
+  self.entityType = PrimitiveType.new("int32_t")
+
   self.lifecycleType = StructType.new("lifecycle", [[
-    int16_t generation;
-    int16_t shardIndex;
+    int32_t shardIndex;
     int16_t rowIndex;
+    int16_t generation;
   ]])
 
   self.minEntity = 1
@@ -50,19 +52,6 @@ function M:init()
 end
 
 function M:bootstrap()
-  self.dataTypes.byte = PrimitiveType.new("int8_t")
-  self.dataTypes.short = PrimitiveType.new("int16_t")
-  self.dataTypes.int = PrimitiveType.new("int32_t")
-  self.dataTypes.long = PrimitiveType.new("int64_t")
-
-  self.dataTypes.unsignedByte = PrimitiveType.new("uint8_t")
-  self.dataTypes.unsignedShort = PrimitiveType.new("uint16_t")
-  self.dataTypes.unsignedInt = PrimitiveType.new("uint32_t")
-  self.dataTypes.unsignedLong = PrimitiveType.new("uint64_t")
-
-  self.dataTypes.float = PrimitiveType.new("float")
-  self.dataTypes.double = PrimitiveType.new("double")
-
   self.dataTypes.tag = TagType.new()
   self.dataTypes.value = ValueType.new()
 
@@ -175,7 +164,7 @@ function M:addShard(tablet)
   local shardIndex = #self.shards + 1
   print("Adding shard #" .. shardIndex .. " for archetype {" .. table.concat(sortedKeys(tablet.archetype), ", ") .. "}")
 
-  local entities = self.dataTypes.int:allocateArray(tablet.shardSize)
+  local entities = self.entityType:allocateArray(tablet.shardSize)
   local columns = {}
 
   for component in pairs(tablet.archetype) do

@@ -114,8 +114,6 @@ function love.load()
 
   world = World.new()
 
-  world.componentTypes.struct = "value"
-
   world.dataTypes.vec2 = StructType.new("vec2", [[
     float x, y;
   ]])
