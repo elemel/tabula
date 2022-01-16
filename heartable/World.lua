@@ -31,7 +31,7 @@ function M:init()
   self.entityType = PrimitiveType.new("int32_t")
 
   self.lifecycleType = StructType.new("lifecycle", [[
-    int32_t shardIndex;
+    int16_t shardIndex;
     int16_t rowIndex;
     int16_t generation;
   ]])
@@ -57,12 +57,6 @@ function M:bootstrap()
 
   self.componentTypes.dataType = "value"
   self.componentTypes.name = "value"
-
-  -- self.names.int = self:addEntity({})
-  -- self.names.dataType = self:addEntity({})
-  -- self.names.name = self:addEntity({})
-  -- self.names.tag = self:addEntity({})
-  -- self.names.value = self:addEntity({})
 end
 
 function M:addEntity(components)
@@ -89,26 +83,22 @@ function M:addEntity(components)
   end
 
   self.entities[entity] = {
-    generation = 0,
     shardIndex = shard.index,
     rowIndex = rowIndex,
+    generation = 1,
   }
 
   return entity
 end
 
-function M:addComponent(entity, component, value)
-end
-
 function M:removeEntity(entity)
   local lifecycle = self.entities[entity]
-  local shardIndex = lifecycle.shardIndex
 
-  if shardIndex == 0 then
+  if lifecycle.generation <= 0 then
     error("No such entity: " .. entity)
   end
 
-  local shard = self.shards[shardIndex]
+  local shard = self.shards[lifecycle.shardIndex]
 
   if lifecycle.rowIndex == shard.rowCount - 1 then
     shard.rowCount = shard.rowCount - 1
@@ -117,8 +107,7 @@ function M:removeEntity(entity)
     shard.tombstoneCount = shard.tombstoneCount + 1
   end
 
-  lifecycle.generation = lifecycle.generation + 1
-  lifecycle.shardIndex = 0
+  lifecycle.generation = -lifecycle.generation
 end
 
 function M:addTablet(archetype)

@@ -179,10 +179,10 @@ function love.load()
     position = {800, 300},
   })
 
-  local centerX = love.math.randomNormal(100, 400)
-  local centerY = love.math.randomNormal(100, 300)
+  for i = 1, 256 do
+    local centerX = love.math.randomNormal(100, 400)
+    local centerY = love.math.randomNormal(100, 300)
 
-  for i = 1, 1000 do
     local positionAngle = love.math.random() * 2 * math.pi
     local positionRadius = love.math.randomNormal(100)
 
