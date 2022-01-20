@@ -13,9 +13,10 @@ local sortedKeys = assert(tableMod.sortedKeys)
 local M = Class.new()
 
 function M:init()
-  print("Adding tablet for root archetype")
+  print("Adding tablet #1 for archetype {}")
 
   self.rootTablet = {
+    index = 1,
     archetype = {},
 
     shardSize = 256,
@@ -61,7 +62,25 @@ end
 
 function M:addEntity(components)
   local entity = self.nextEntity
-  self.nextEntity = entity + 1
+
+  while true do
+    local nextEntity = entity + 1
+
+    if nextEntity > self.maxEntity then
+      nextEntity = self.minEntity
+    end
+
+    if self.entities[entity].generation <= 0 then
+      self.nextEntity = nextEntity
+      break
+    end
+
+    entity = nextEntity
+
+    if entity == self.nextEntity then
+      error("Too many entities")
+    end
+  end
 
   local archetype = keySet(components)
   local tablet = self:addTablet(archetype)
@@ -85,7 +104,7 @@ function M:addEntity(components)
   self.entities[entity] = {
     shardIndex = shard.index,
     rowIndex = rowIndex,
-    generation = 1,
+    generation = 1 - self.entities[entity].generation,
   }
 
   return entity
@@ -125,9 +144,11 @@ function M:addTablet(archetype)
         childArchetype[childComponent] = true
       end
 
-      print("Adding tablet for archetype {" .. table.concat(sortedKeys(childArchetype), ", ") .. "}")
+      local tabletIndex = #self.tablets + 1
+      print("Adding tablet #" .. tabletIndex .. " for archetype {" .. table.concat(sortedKeys(childArchetype), ", ") .. "}")
 
       childTablet = {
+        index = tabletIndex,
         archetype = childArchetype,
 
         shardSize = 256,
