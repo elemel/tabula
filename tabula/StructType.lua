@@ -1,4 +1,4 @@
-local Class = require("heartable.Class")
+local Class = require("tabula.Class")
 local ffi = require("ffi")
 
 local M = Class.new()

@@ -1,5 +1,5 @@
-local Class = require("heartable.Class")
-local tableMod = require("heartable.table")
+local Class = require("tabula.Class")
+local tableMod = require("tabula.table")
 
 local function match(pattern, archetype)
   local result = 0

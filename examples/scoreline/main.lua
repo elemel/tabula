@@ -1,8 +1,8 @@
-local Query = require("heartable.Query")
-local World = require("heartable.World")
-local StructType = require("heartable.StructType")
-local ValueType = require("heartable.ValueType")
-local colorMod = require("heartable.color")
+local Query = require("tabula.Query")
+local World = require("tabula.World")
+local StructType = require("tabula.StructType")
+local ValueType = require("tabula.ValueType")
+local colorMod = require("tabula.color")
 
 function drawBoxes(world)
   world.queries.drawBoxes:eachRow(function(
