@@ -19,8 +19,8 @@ function M:init()
     index = 1,
     archetype = {},
 
-    shardSize = 256,
     shards = {},
+    shardCapacity = 256,
 
     parents = {},
     children = {},
@@ -29,19 +29,8 @@ function M:init()
   self.tablets = {self.rootTablet}
   self.shards = {}
 
-  self.entityType = PrimitiveType.new("int32_t")
-
-  self.lifecycleType = StructType.new("lifecycle", [[
-    int16_t shardIndex;
-    int16_t rowIndex;
-    int16_t generation;
-  ]])
-
-  self.minEntity = 1
-  self.maxEntity = 1024 * 1024 - 1
-
-  self.entities = self.lifecycleType:allocateArray(self.maxEntity + 1)
-  self.nextEntity = self.minEntity
+  self.entities = {}
+  self.nextKey = 1
 
   self.dataTypes = {}
   self.componentTypes = {}
@@ -53,80 +42,64 @@ function M:init()
 end
 
 function M:bootstrap()
+  self.dataTypes.key = PrimitiveType.new("double")
   self.dataTypes.tag = TagType.new()
   self.dataTypes.value = ValueType.new()
 
+  self.componentTypes.key = "key"
   self.componentTypes.dataType = "value"
   self.componentTypes.name = "value"
 end
 
 function M:addEntity(components)
-  local entity = self.nextEntity
-
-  while true do
-    local nextEntity = entity + 1
-
-    if nextEntity > self.maxEntity then
-      nextEntity = self.minEntity
-    end
-
-    if self.entities[entity].generation <= 0 then
-      self.nextEntity = nextEntity
-      break
-    end
-
-    entity = nextEntity
-
-    if entity == self.nextEntity then
-      error("Too many entities")
-    end
-  end
+  local key = self.nextKey
+  self.nextKey = self.nextKey + 1
 
   local archetype = keySet(components)
   local tablet = self:addTablet(archetype)
   local shard = tablet.shards[#tablet.shards]
 
-  if shard == nil or shard.rowCount == tablet.shardSize then
+  if shard == nil or shard.size == tablet.shardCapacity then
     shard = self:addShard(tablet)
   end
 
-  local rowIndex = shard.rowCount
-  shard.rowCount = shard.rowCount + 1
+  local row = shard.size
+  shard.size = shard.size + 1
 
-  shard.entities[rowIndex] = entity
+  shard.keys[row] = key
 
   for component in pairs(archetype) do
     local column = shard.columns[component]
     local value = components[component]
-    column[rowIndex] = value
+    column[row] = value
   end
 
-  self.entities[entity] = {
-    shardIndex = shard.index,
-    rowIndex = rowIndex,
-    generation = 1 - self.entities[entity].generation,
+  self.entities[key] = {
+    key = key,
+    _shard = shard,
+    _row = row,
   }
 
   return entity
 end
 
-function M:removeEntity(entity)
-  local lifecycle = self.entities[entity]
+function M:removeEntity(key)
+  local entity = self.entities[key]
 
-  if lifecycle.generation <= 0 then
-    error("No such entity: " .. entity)
+  if not entity then
+    error("No such entity: " .. key)
   end
 
-  local shard = self.shards[lifecycle.shardIndex]
+  entity.shard.key[entity.row] = 0
 
-  if lifecycle.rowIndex == shard.rowCount - 1 then
-    shard.rowCount = shard.rowCount - 1
-  else
-    shard.entities[lifecycle.rowIndex] = 0
-    shard.tombstoneCount = shard.tombstoneCount + 1
+  if entity.row == entity.shard.size - 1 then
+    entity.shard.size = entity.shard.size - 1
   end
 
-  lifecycle.generation = -lifecycle.generation
+  entity.shard = nil
+  entity.row = nil
+
+  self.entities[key] = nil
 end
 
 function M:addTablet(archetype)
@@ -144,15 +117,13 @@ function M:addTablet(archetype)
         childArchetype[childComponent] = true
       end
 
-      local tabletIndex = #self.tablets + 1
-      print("Adding tablet #" .. tabletIndex .. " for archetype {" .. table.concat(sortedKeys(childArchetype), ", ") .. "}")
+      print("Adding tablet #" .. (#self.tablets + 1) .. " for archetype {" .. table.concat(sortedKeys(childArchetype), ", ") .. "}")
 
       childTablet = {
-        index = tabletIndex,
         archetype = childArchetype,
 
-        shardSize = 256,
         shards = {},
+        shardCapacity = 256,
 
         parents = {},
         children = {},
@@ -171,11 +142,14 @@ function M:addTablet(archetype)
 end
 
 function M:addShard(tablet)
-  local shardIndex = #self.shards + 1
-  print("Adding shard #" .. shardIndex .. " for archetype {" .. table.concat(sortedKeys(tablet.archetype), ", ") .. "}")
+  print("Adding shard #" .. (#tablet.shards + 1) .. " for archetype {" .. table.concat(sortedKeys(tablet.archetype), ", ") .. "}")
 
-  local entities = self.entityType:allocateArray(tablet.shardSize)
-  local columns = {}
+  local shard = {
+    tablet = tablet,
+    keys = {},
+    columns = {},
+    size = 0,
+  }
 
   for component in pairs(tablet.archetype) do
     local typeName = self.componentTypes[component]
@@ -185,19 +159,8 @@ function M:addShard(tablet)
     end
 
     local dataType = self.dataTypes[typeName]
-    columns[component] = dataType:allocateArray(tablet.shardSize)
+    shard.columns[component] = dataType:allocateArray(tablet.shardCapacity)
   end
-
-  shard = {
-    index = shardIndex,
-    tablet = tablet,
-
-    rowCount = 0,
-    tombstoneCount = 0,
-
-    entities = entities,
-    columns = columns,
-  }
 
   table.insert(tablet.shards, shard)
   table.insert(self.shards, shard)
