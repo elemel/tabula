@@ -68,10 +68,7 @@ function M:eachShard1(callback)
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
       if shard.size >= 1 then
-        callback(
-          shard.size,
-          shard.keys,
-          shard.columns[component1])
+        callback(shard.size, shard.columns[component1])
       end
     end
   end
@@ -86,9 +83,9 @@ function M:eachShard2(callback)
       if shard.size >= 1 then
         callback(
           shard.size,
-          shard.keys,
           shard.columns[component1],
-          shard.columns[component2])
+          shard.columns[component2]
+        )
       end
     end
   end
@@ -104,10 +101,10 @@ function M:eachShard3(callback)
       if shard.size >= 1 then
         callback(
           shard.size,
-          shard.keys,
           shard.columns[component1],
           shard.columns[component2],
-          shard.columns[component3])
+          shard.columns[component3]
+        )
       end
     end
   end
@@ -137,11 +134,11 @@ function M:eachRow0(callback)
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
       if shard.size >= 1 then
-        local keys = shard.keys
+        local keys = shard.columns.key
 
         for i = 0, shard.size - 1 do
           if keys[i] ~= 0 then
-            callback(i, keys)
+            callback(i)
           end
         end
       end
@@ -155,13 +152,12 @@ function M:eachRow1(callback)
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
       if shard.rowCount >= 1 then
-        local keys = shard.keys
+        local keys = shard.columns.key
         local column1 = shard.columns[component1]
 
         for i = 0, shard.size - 1 do
           if keys[i] ~= 0 then
-            callback(i, keys,
-              column1)
+            callback(i, column1)
           end
         end
       end
@@ -176,16 +172,14 @@ function M:eachRow2(callback)
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
       if shard.size >= 1 then
-        local keys = shard.keys
+        local keys = shard.columns.key
 
         local column1 = shard.columns[component1]
         local column2 = shard.columns[component2]
 
         for i = 0, shard.size - 1 do
           if keys[i] ~= 0 then
-            callback(i, keys,
-              column1,
-              column2)
+            callback(i, column1, column2)
           end
         end
       end
@@ -201,7 +195,7 @@ function M:eachRow3(callback)
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
       if shard.size >= 1 then
-        local keys = shard.keys
+        local keys = shard.columns.key
 
         local column1 = shard.columns[component1]
         local column2 = shard.columns[component2]
@@ -209,10 +203,7 @@ function M:eachRow3(callback)
 
         for i = 0, shard.size - 1 do
           if keys[i] ~= 0 then
-            callback(i, keys,
-              column1,
-              column2,
-              column3)
+            callback(i, column1, column2, column3)
           end
         end
       end
@@ -229,7 +220,7 @@ function M:eachRow4(callback)
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
       if shard.size >= 1 then
-        local keys = shard.keys
+        local keys = shard.columns.key
 
         local column1 = shard.columns[component1]
         local column2 = shard.columns[component2]
@@ -238,11 +229,7 @@ function M:eachRow4(callback)
 
         for i = 0, shard.size - 1 do
           if keys[i] ~= 0 then
-            callback(i, keys,
-              column1,
-              column2,
-              column3,
-              column4)
+            callback(i, column1, column2, column3, column4)
           end
         end
       end
@@ -260,7 +247,7 @@ function M:eachRow5(callback)
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
       if shard.size >= 1 then
-        local keys = shard.key
+        local keys = shard.columns.key
 
         local column1 = shard.columns[component1]
         local column2 = shard.columns[component2]
@@ -270,12 +257,7 @@ function M:eachRow5(callback)
 
         for i = 0, shard.size - 1 do
           if keys[i] ~= 0 then
-            callback(i, keys,
-              column1,
-              column2,
-              column3,
-              column4,
-              column5)
+            callback(i, column1, column2, column3, column4, column5)
           end
         end
       end
@@ -294,7 +276,7 @@ function M:eachRow6(callback)
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
       if shard.size >= 1 then
-        local keys = shard.keys
+        local keys = shard.columns.key
 
         local column1 = shard.columns[component1]
         local column2 = shard.columns[component2]
@@ -305,13 +287,7 @@ function M:eachRow6(callback)
 
         for i = 0, shard.size - 1 do
           if keys[i] ~= 0 then
-            callback(i, keys,
-              column1,
-              column2,
-              column3,
-              column4,
-              column5,
-              column6)
+            callback(i, column1, column2, column3, column4, column5, column6)
           end
         end
       end

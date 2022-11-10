@@ -6,7 +6,13 @@ local M = Class.new()
 function M:init(name, members)
   self.name = assert(name)
 
-  local structDecl = "typedef struct " .. self.name .. " { " .. members .. " } " .. self.name .. ";"
+  local structDecl = "typedef struct "
+    .. self.name
+    .. " { "
+    .. members
+    .. " } "
+    .. self.name
+    .. ";"
   ffi.cdef(structDecl)
 
   self.structType = ffi.typeof(self.name)

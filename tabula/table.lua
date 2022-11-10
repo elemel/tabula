@@ -10,8 +10,18 @@ function M.find(t, v)
   return nil
 end
 
-function M.findLast(t, v)
+function M.findFirst(t, v)
   for i = 1, #t do
+    if t[i] == v then
+      return i
+    end
+  end
+
+  return nil
+end
+
+function M.findLast(t, v)
+  for i = #t, 1, -1 do
     if t[i] == v then
       return i
     end
@@ -68,15 +78,27 @@ function M.values(t, result)
   return result
 end
 
-function M.copyArray(source, i, n, destination, j)
+function M.copy(source, target)
+  target = target or {}
+
+  for k, v in pairs(source) do
+    target[k] = v
+  end
+
+  return target
+end
+
+function M.copyArray(source, i, n, target, j)
   i = i or 1
   n = n or #source
-  destination = destination or {}
+  target = target or {}
   j = j or 1
 
   for k = 0, n - 1 do
-    destination[j + k] = source[i + k]
+    target[j + k] = source[i + k]
   end
+
+  return target
 end
 
 function M.sortedKeys(t, result)

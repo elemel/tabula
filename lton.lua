@@ -62,10 +62,11 @@ function M.dump(value, format, order, buffer, depth, stack)
   buffer = buffer or {}
   depth = depth or 0
 
-  if type(value) == "nil" or
-    type(value) == "boolean" or
-    type(value) == "number" then
-
+  if
+    type(value) == "nil"
+    or type(value) == "boolean"
+    or type(value) == "number"
+  then
     table.insert(buffer, tostring(value))
   elseif type(value) == "string" then
     table.insert(buffer, string.format("%q", value))
@@ -90,10 +91,9 @@ function M.dump(value, format, order, buffer, depth, stack)
     table.insert(buffer, "{")
 
     for _, element in ipairs(value) do
-      blank2 =
-        type(element) == "table" and
-        not stack[element] and
-        next(element) ~= nil
+      blank2 = type(element) == "table"
+        and not stack[element]
+        and next(element) ~= nil
 
       if first then
         if pretty then
@@ -130,15 +130,13 @@ function M.dump(value, format, order, buffer, depth, stack)
     local keys = {}
 
     for key in pairs(value) do
-      local isArrayIndex =
-        type(key) == "number" and
-        key == math.floor(key) and
-        key >= 1 and
-        key <= #value
+      local isArrayIndex = type(key) == "number"
+        and key == math.floor(key)
+        and key >= 1
+        and key <= #value
 
-      local isMetamethodName =
-        type(key) == "string" and
-        string.sub(key, 1, 2) == "__"
+      local isMetamethodName = type(key) == "string"
+        and string.sub(key, 1, 2) == "__"
 
       if not isArrayIndex and not isMetamethodName then
         table.insert(keys, key)
@@ -149,10 +147,9 @@ function M.dump(value, format, order, buffer, depth, stack)
 
     for _, key in ipairs(keys) do
       local element = value[key]
-      blank2 =
-        type(element) == "table" and
-        not stack[element] and
-        next(element) ~= nil
+      blank2 = type(element) == "table"
+        and not stack[element]
+        and next(element) ~= nil
 
       if first then
         if pretty then
@@ -176,10 +173,11 @@ function M.dump(value, format, order, buffer, depth, stack)
         end
       end
 
-      if type(key) == "string" and
-          string.find(key, "^[%a_][%w_]*$") and
-          not keywords[key] then
-
+      if
+        type(key) == "string"
+        and string.find(key, "^[%a_][%w_]*$")
+        and not keywords[key]
+      then
         table.insert(buffer, key)
       else
         table.insert(buffer, "[")
@@ -196,7 +194,7 @@ function M.dump(value, format, order, buffer, depth, stack)
       M.dump(element, format, order, buffer, depth + 1, stack)
 
       if pretty then
-          table.insert(buffer, ",\n")
+        table.insert(buffer, ",\n")
       end
 
       first = false

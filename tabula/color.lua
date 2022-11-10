@@ -8,7 +8,7 @@ function M.hslToRgb(h, s, l)
     return l, l, l
   end
 
-  h, s, l = h * 6, s, l
+  local h, s, l = h * 6, s, l
   local c = (1 - abs(2 * l - 1)) * s
   local x = (1 - abs(h % 2 - 1)) * c
   local m, r, g, b = (l - 0.5 * c), 0, 0, 0
