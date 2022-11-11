@@ -5,7 +5,7 @@ local ValueType = require("tabula.ValueType")
 local colorMod = require("tabula.color")
 
 function drawBoxes(world)
-  world.queries.drawBoxes:eachRow(function(i, boxes, colors, positions)
+  world.queries.drawBoxes:eachRow(function(i, entities, boxes, colors, positions)
     love.graphics.setColor(colors[i].r, colors[i].g, colors[i].b, colors[i].a)
 
     love.graphics.rectangle(
@@ -19,14 +19,14 @@ function drawBoxes(world)
 end
 
 function handleMouseMoved(world, x, y, dx, dy, isTouch)
-  world.queries.handleMouseMoved:eachRow(function(i, positions)
+  world.queries.handleMouseMoved:eachRow(function(i, entities, positions)
     positions[i].y = y
   end)
 end
 
 function updateVelocityPositions(world, dt)
   world.queries.updateVelocityPositions:eachRow(
-    function(i, positions, previousPositions, velocities)
+    function(i, entities, positions, previousPositions, velocities)
       previousPositions[i] = positions[i]
 
       positions[i].x = positions[i].x + velocities[i].x * dt
@@ -37,7 +37,7 @@ end
 
 function updateWallCollisions(world, dt)
   world.queries.updateWallCollisions:eachRow(
-    function(i, boxes, positions, velocities)
+    function(i, entities, boxes, positions, velocities)
       if positions[i].y - 0.5 * boxes[i].y < 0 and velocities[i].y < 0 then
         velocities[i].y = -velocities[i].y
       elseif
@@ -60,12 +60,12 @@ function updateWallCollisions(world, dt)
 end
 
 function updatePaddleCollisions(world, dt)
-  world.queries.updatePaddleCollisions:eachRow(function(i, boxes, positions)
+  world.queries.updatePaddleCollisions:eachRow(function(i, entities, boxes, positions)
     local paddleBox = boxes[i]
     local paddlePosition = positions[i]
 
     world.queries.updatePaddleBallCollisions:eachRow(
-      function(i, boxes, colors, positions, previousPositions, velocities)
+      function(i, entities, boxes, colors, positions, previousPositions, velocities)
         if
           positions[i].y - 0.5 * boxes[i].y
             < paddlePosition.y + 0.5 * paddleBox.y

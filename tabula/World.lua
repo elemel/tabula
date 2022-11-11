@@ -1,6 +1,6 @@
 local Class = require("tabula.Class")
-local Entity = require("tabula.Entity")
 local PrimitiveType = require("tabula.PrimitiveType")
+local Row = require("tabula.Row")
 local StructType = require("tabula.StructType")
 local tableMod = require("tabula.table")
 local TagType = require("tabula.TagType")
@@ -14,14 +14,13 @@ local sortedKeys = assert(tableMod.sortedKeys)
 local M = Class.new()
 
 local function formatArchetype(archetype)
-  return "[" .. table.concat(sortedKeys(archetype), ", ") .. "]"
+  return "{ " .. table.concat(sortedKeys(archetype), ", ") .. " }"
 end
 
 function M:init()
-  print("Adding tablet #1 for archetype []")
+  print("Adding tablet #1 for archetype { }")
 
   self.rootTablet = {
-    index = 1,
     archetype = {},
 
     shards = {},
@@ -34,8 +33,8 @@ function M:init()
   self.tablets = { self.rootTablet }
   self.shards = {}
 
-  self.entities = {}
-  self.nextKey = 1
+  self.rows = {}
+  self.nextEntity = 1
 
   self.dataTypes = {}
   self.componentTypes = {}
@@ -47,59 +46,64 @@ function M:init()
 end
 
 function M:bootstrap()
-  self.dataTypes.key = PrimitiveType.new("double")
+  self.dataTypes.entity = PrimitiveType.new("double")
   self.dataTypes.tag = TagType.new()
   self.dataTypes.value = ValueType.new()
 
-  self.componentTypes.key = "key"
+  self.componentTypes.entity = "entity"
   self.componentTypes.dataType = "value"
   self.componentTypes.name = "value"
 end
 
 function M:addEntity(components)
-  components = tableMod.copy(components)
-  components.key = self.nextKey
-  self.nextKey = self.nextKey + 1
+  local entity = self.nextEntity
+  self.nextEntity = self.nextEntity + 1
 
   local archetype = keySet(components)
-  archetype.key = nil
 
   local tablet = self:addTablet(archetype)
-  local shard = tablet.shards[#tablet.shards]
+  local shard
 
-  if shard == nil or shard.size == tablet.shardCapacity then
+  if #tablet.shards == 0 then
     shard = self:addShard(tablet)
+  else
+    shard = tablet.shards[#tablet.shards]
+
+    while shard.size > 0 and shard.entities[shard.size - 1] == 0 do
+      shard.size = shard.size - 1
+    end
+
+    if shard.size == tablet.shardCapacity then
+      shard = self:addShard(tablet)
+    end
   end
 
-  local row = shard.size
+  local index = shard.size
   shard.size = shard.size + 1
 
+  shard.entities[index] = entity
+
   for component, column in pairs(shard.columns) do
-    column[row] = components[component]
+    column[index] = components[component]
   end
 
-  local entity = Entity.new(shard, row)
-  self.entities[components.key] = entity
+  self.rows[entity] = Row.new(shard, index)
   return entity
 end
 
-function M:removeEntity(key)
-  local entity = self.entities[key]
+function M:removeEntity(entity)
+  local row = self.rows[entity]
 
-  if not entity then
-    error("No such entity: " .. key)
+  if not row then
+    error("No such entity: " .. entity)
   end
 
-  entity._shard.columns.key[entity._row] = 0
+  row._shard.entities[row._index] = 0
 
-  if entity._row == entity._shard.size - 1 then
-    entity._shard.size = entity._shard.size - 1
-  end
+  row._shard = nil
+  row._index = nil
 
-  entity._shard = nil
-  entity._row = nil
-
-  self.entities[key] = nil
+  self.rows[entity] = nil
 end
 
 function M:addTablet(archetype)
@@ -156,7 +160,7 @@ function M:addShard(tablet)
     size = 0,
   }
 
-  shard.columns.key = self.dataTypes.key:allocateArray(tablet.shardCapacity)
+  shard.entities = self.dataTypes.entity:allocateArray(tablet.shardCapacity)
 
   for component in pairs(tablet.archetype) do
     local typeName = self.componentTypes[component]
