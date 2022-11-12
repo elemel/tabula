@@ -98,7 +98,12 @@ function M:removeEntity(entity)
     error("No such entity: " .. entity)
   end
 
-  row._shard.entities[row._index] = 0
+  local shard = row._shard
+  shard.entities[row._index] = 0
+
+  while shard.size > 0 and shard.entities[shard.size - 1] == 0 do
+    shard.size = shard.size - 1
+  end
 
   row._shard = nil
   row._index = nil

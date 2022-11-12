@@ -15,8 +15,8 @@ end
 
 local M = Class.new()
 
-function M:init(world, config)
-  self.world = assert(world)
+function M:init(engine, config)
+  self.engine = assert(engine)
   config = config or {}
   self.allOf = config.allOf or {}
   self.noneOf = config.noneOf or {}
@@ -28,7 +28,7 @@ end
 function M:updateTablets()
   tableMod.clear(self.tablets)
 
-  for _, tablet in ipairs(self.world.tablets) do
+  for _, tablet in ipairs(self.engine.tablets) do
     local allOfCount = match(self.allOf, tablet.archetype)
     local noneOfCount = match(self.noneOf, tablet.archetype)
 
@@ -289,7 +289,16 @@ function M:eachRow6(callback)
 
         for i = 0, shard.size - 1 do
           if entities[i] ~= 0 then
-            callback(i, entities, column1, column2, column3, column4, column5, column6)
+            callback(
+              i,
+              entities,
+              column1,
+              column2,
+              column3,
+              column4,
+              column5,
+              column6
+            )
           end
         end
       end

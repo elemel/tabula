@@ -1,31 +1,33 @@
 local Query = require("tabula.Query")
-local World = require("tabula.World")
+local engine = require("tabula.engine")
 local StructType = require("tabula.StructType")
 local ValueType = require("tabula.ValueType")
 local colorMod = require("tabula.color")
 
-function drawBoxes(world)
-  world.queries.drawBoxes:eachRow(function(i, entities, boxes, colors, positions)
-    love.graphics.setColor(colors[i].r, colors[i].g, colors[i].b, colors[i].a)
+function drawBoxes(engine)
+  engine.queries.drawBoxes:eachRow(
+    function(i, entities, boxes, colors, positions)
+      love.graphics.setColor(colors[i].r, colors[i].g, colors[i].b, colors[i].a)
 
-    love.graphics.rectangle(
-      "fill",
-      positions[i].x - 0.5 * boxes[i].x,
-      positions[i].y - 0.5 * boxes[i].y,
-      boxes[i].x,
-      boxes[i].y
-    )
-  end)
+      love.graphics.rectangle(
+        "fill",
+        positions[i].x - 0.5 * boxes[i].x,
+        positions[i].y - 0.5 * boxes[i].y,
+        boxes[i].x,
+        boxes[i].y
+      )
+    end
+  )
 end
 
-function handleMouseMoved(world, x, y, dx, dy, isTouch)
-  world.queries.handleMouseMoved:eachRow(function(i, entities, positions)
+function handleMouseMoved(engine, x, y, dx, dy, isTouch)
+  engine.queries.handleMouseMoved:eachRow(function(i, entities, positions)
     positions[i].y = y
   end)
 end
 
-function updateVelocityPositions(world, dt)
-  world.queries.updateVelocityPositions:eachRow(
+function updateVelocityPositions(engine, dt)
+  engine.queries.updateVelocityPositions:eachRow(
     function(i, entities, positions, previousPositions, velocities)
       previousPositions[i] = positions[i]
 
@@ -35,8 +37,8 @@ function updateVelocityPositions(world, dt)
   )
 end
 
-function updateWallCollisions(world, dt)
-  world.queries.updateWallCollisions:eachRow(
+function updateWallCollisions(engine, dt)
+  engine.queries.updateWallCollisions:eachRow(
     function(i, entities, boxes, positions, velocities)
       if positions[i].y - 0.5 * boxes[i].y < 0 and velocities[i].y < 0 then
         velocities[i].y = -velocities[i].y
@@ -59,51 +61,53 @@ function updateWallCollisions(world, dt)
   )
 end
 
-function updatePaddleCollisions(world, dt)
-  world.queries.updatePaddleCollisions:eachRow(function(i, entities, boxes, positions)
-    local paddleBox = boxes[i]
-    local paddlePosition = positions[i]
+function updatePaddleCollisions(engine, dt)
+  engine.queries.updatePaddleCollisions:eachRow(
+    function(i, entities, boxes, positions)
+      local paddleBox = boxes[i]
+      local paddlePosition = positions[i]
 
-    world.queries.updatePaddleBallCollisions:eachRow(
-      function(i, entities, boxes, colors, positions, previousPositions, velocities)
-        if
-          positions[i].y - 0.5 * boxes[i].y
-            < paddlePosition.y + 0.5 * paddleBox.y
-          and positions[i].y + 0.5 * boxes[i].y
-            > paddlePosition.y - 0.5 * paddleBox.y
-        then
-          if velocities[i].x < 0 and positions[i].x < 400 then
-            if
-              previousPositions[i].x - 0.5 * boxes[i].x
-                >= paddlePosition.x + 0.5 * paddleBox.x
-              and positions[i].x - 0.5 * boxes[i].x
-                < paddlePosition.x + 0.5 * paddleBox.x
-            then
-              velocities[i].x = -velocities[i].x
+      engine.queries.updatePaddleBallCollisions:eachRow(
+        function(i, entities, boxes, colors, positions, previousPositions, velocities)
+          if
+            positions[i].y - 0.5 * boxes[i].y
+              < paddlePosition.y + 0.5 * paddleBox.y
+            and positions[i].y + 0.5 * boxes[i].y
+              > paddlePosition.y - 0.5 * paddleBox.y
+          then
+            if velocities[i].x < 0 and positions[i].x < 400 then
+              if
+                previousPositions[i].x - 0.5 * boxes[i].x
+                  >= paddlePosition.x + 0.5 * paddleBox.x
+                and positions[i].x - 0.5 * boxes[i].x
+                  < paddlePosition.x + 0.5 * paddleBox.x
+              then
+                velocities[i].x = -velocities[i].x
 
-              colors[i].r = velocities[i].x
-              colors[i].b = -velocities[i].x
-            end
-          elseif velocities[i].x > 0 and positions[i].x > 400 then
-            if
-              previousPositions[i].x + 0.5 * boxes[i].x
-                <= paddlePosition.x - 0.5 * paddleBox.x
-              and positions[i].x + 0.5 * boxes[i].x
-                > paddlePosition.x - 0.5 * paddleBox.x
-            then
-              velocities[i].x = -velocities[i].x
+                colors[i].r = velocities[i].x
+                colors[i].b = -velocities[i].x
+              end
+            elseif velocities[i].x > 0 and positions[i].x > 400 then
+              if
+                previousPositions[i].x + 0.5 * boxes[i].x
+                  <= paddlePosition.x - 0.5 * paddleBox.x
+                and positions[i].x + 0.5 * boxes[i].x
+                  > paddlePosition.x - 0.5 * paddleBox.x
+              then
+                velocities[i].x = -velocities[i].x
 
-              colors[i].r = velocities[i].x
-              colors[i].b = -velocities[i].x
+                colors[i].r = velocities[i].x
+                colors[i].b = -velocities[i].x
+              end
             end
           end
         end
-      end
-    )
-  end)
+      )
+    end
+  )
 end
 
-function drawFps(world)
+function drawFps(engine)
   love.graphics.setColor(1, 1, 1, 1)
   love.graphics.print(love.timer.getFPS())
 end
@@ -112,54 +116,54 @@ function love.load()
   love.mouse.setVisible(false)
   love.graphics.setBlendMode("add")
 
-  world = World.new()
+  engine = engine.new()
 
-  world.dataTypes.vec2 = StructType.new(
+  engine.dataTypes.vec2 = StructType.new(
     "vec2",
     [[
     float x, y;
   ]]
   )
 
-  world.dataTypes.color4 = StructType.new(
+  engine.dataTypes.color4 = StructType.new(
     "color4",
     [[
     float r, g, b, a;
   ]]
   )
 
-  world:addEntity({ name = "position", dataType = "vec2" })
-  world.componentTypes.position = "vec2"
+  engine:addEntity({ name = "position", dataType = "vec2" })
+  engine.componentTypes.position = "vec2"
 
-  world:addEntity({ name = "previousPosition", dataType = "vec2" })
-  world.componentTypes.previousPosition = "vec2"
+  engine:addEntity({ name = "previousPosition", dataType = "vec2" })
+  engine.componentTypes.previousPosition = "vec2"
 
-  world:addEntity({ name = "velocity", dataType = "vec2" })
-  world.componentTypes.velocity = "vec2"
+  engine:addEntity({ name = "velocity", dataType = "vec2" })
+  engine.componentTypes.velocity = "vec2"
 
-  world:addEntity({ name = "box", dataType = "vec2" })
-  world.componentTypes.box = "vec2"
+  engine:addEntity({ name = "box", dataType = "vec2" })
+  engine.componentTypes.box = "vec2"
 
-  world:addEntity({ name = "color", dataType = "color4" })
-  world.componentTypes.color = "color4"
+  engine:addEntity({ name = "color", dataType = "color4" })
+  engine.componentTypes.color = "color4"
 
-  world:addEntity({ name = "isPaddle", dataType = "tag" })
-  world.componentTypes.isPaddle = "tag"
+  engine:addEntity({ name = "isPaddle", dataType = "tag" })
+  engine.componentTypes.isPaddle = "tag"
 
-  world:addEntity({ name = "isPlayer", dataType = "tag" })
-  world.componentTypes.isPlayer = "tag"
+  engine:addEntity({ name = "isPlayer", dataType = "tag" })
+  engine.componentTypes.isPlayer = "tag"
 
-  world:addEntity({ name = "isBall", dataType = "tag" })
-  world.componentTypes.isBall = "tag"
+  engine:addEntity({ name = "isBall", dataType = "tag" })
+  engine.componentTypes.isBall = "tag"
 
-  world:addEntity({
+  engine:addEntity({
     box = { 10, 50 },
     color = { 0.9, 0.3, 0.1, 1 },
     isPaddle = true,
     position = { 100, 300 },
   })
 
-  world:addEntity({
+  engine:addEntity({
     box = { 10, 50 },
     color = { 0, 0.5, 1, 1 },
     isPaddle = true,
@@ -167,19 +171,19 @@ function love.load()
     position = { 700, 300 },
   })
 
-  world:addEntity({
+  engine:addEntity({
     box = { 2, 600 },
     color = { 0.2, 0.8, 0, 1 },
     position = { 400, 300 },
   })
 
-  world:addEntity({
+  engine:addEntity({
     box = { 2, 600 },
     color = { 1, 0.3, 0.7, 1 },
     position = { 0, 300 },
   })
 
-  world:addEntity({
+  engine:addEntity({
     box = { 2, 600 },
     color = { 0.7, 0.3, 1, 1 },
     position = { 800, 300 },
@@ -210,7 +214,7 @@ function love.load()
 
     local a = love.math.randomNormal(0.1, 0.5)
 
-    world:addEntity({
+    engine:addEntity({
       box = { 10, 10 },
       color = { r, g, b, a },
       isBall = true,
@@ -220,38 +224,38 @@ function love.load()
     })
   end
 
-  world:addEvent("draw")
-  world:addEvent("mouseMoved")
-  world:addEvent("update")
+  engine:addEvent("draw")
+  engine:addEvent("mouseMoved")
+  engine:addEvent("update")
 
-  world:addSystem("draw", drawBoxes)
-  world:addSystem("draw", drawFps)
-  world:addSystem("mouseMoved", handleMouseMoved)
-  world:addSystem("update", updateVelocityPositions)
-  world:addSystem("update", updateWallCollisions)
-  world:addSystem("update", updatePaddleCollisions)
+  engine:addSystem("draw", drawBoxes)
+  engine:addSystem("draw", drawFps)
+  engine:addSystem("mouseMoved", handleMouseMoved)
+  engine:addSystem("update", updateVelocityPositions)
+  engine:addSystem("update", updateWallCollisions)
+  engine:addSystem("update", updatePaddleCollisions)
 
-  world.queries.drawBoxes = Query.new(world, {
+  engine.queries.drawBoxes = Query.new(engine, {
     allOf = { "box", "color", "position" },
   })
 
-  world.queries.handleMouseMoved = Query.new(world, {
+  engine.queries.handleMouseMoved = Query.new(engine, {
     allOf = { "position", "isPaddle", "isPlayer" },
   })
 
-  world.queries.updateVelocityPositions = Query.new(world, {
+  engine.queries.updateVelocityPositions = Query.new(engine, {
     allOf = { "position", "previousPosition", "velocity" },
   })
 
-  world.queries.updateWallCollisions = Query.new(world, {
+  engine.queries.updateWallCollisions = Query.new(engine, {
     allOf = { "box", "position", "velocity", "isBall" },
   })
 
-  world.queries.updatePaddleCollisions = Query.new(world, {
+  engine.queries.updatePaddleCollisions = Query.new(engine, {
     allOf = { "box", "position", "isPaddle" },
   })
 
-  world.queries.updatePaddleBallCollisions = Query.new(world, {
+  engine.queries.updatePaddleBallCollisions = Query.new(engine, {
     allOf = {
       "box",
       "color",
@@ -264,13 +268,13 @@ function love.load()
 end
 
 function love.draw(...)
-  world:handleEvent("draw", ...)
+  engine:handleEvent("draw", ...)
 end
 
 function love.mousemoved(...)
-  world:handleEvent("mouseMoved", ...)
+  engine:handleEvent("mouseMoved", ...)
 end
 
 function love.update(...)
-  world:handleEvent("update", ...)
+  engine:handleEvent("update", ...)
 end
