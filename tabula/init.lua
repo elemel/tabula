@@ -2,6 +2,7 @@ local M = {}
 
 M.Class = require("tabula.Class")
 M.color = require("tabula.color")
+M.CType = require("tabula.CType")
 M.data = require("tabula.data")
 M.Engine = require("tabula.Engine")
 M.PrimitiveType = require("tabula.PrimitiveType")

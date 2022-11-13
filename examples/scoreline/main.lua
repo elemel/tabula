@@ -132,28 +132,13 @@ function love.load()
   ]]
   )
 
-  engine:addEntity({ name = "position", dataType = "vec2" })
   engine.componentTypes.position = "vec2"
-
-  engine:addEntity({ name = "previousPosition", dataType = "vec2" })
   engine.componentTypes.previousPosition = "vec2"
-
-  engine:addEntity({ name = "velocity", dataType = "vec2" })
   engine.componentTypes.velocity = "vec2"
-
-  engine:addEntity({ name = "box", dataType = "vec2" })
   engine.componentTypes.box = "vec2"
-
-  engine:addEntity({ name = "color", dataType = "color4" })
   engine.componentTypes.color = "color4"
-
-  engine:addEntity({ name = "isPaddle", dataType = "tag" })
   engine.componentTypes.isPaddle = "tag"
-
-  engine:addEntity({ name = "isPlayer", dataType = "tag" })
   engine.componentTypes.isPlayer = "tag"
-
-  engine:addEntity({ name = "isBall", dataType = "tag" })
   engine.componentTypes.isBall = "tag"
 
   engine:addEntity({

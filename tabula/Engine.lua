@@ -36,23 +36,17 @@ function M:init()
   self.rows = {}
   self.nextEntity = 1
 
-  self.dataTypes = {}
+  self.dataTypes = {
+    boolean = PrimitiveType.new("bool"),
+    number = PrimitiveType.new("double"),
+    tag = TagType.new(),
+    value = ValueType.new(),
+  }
+
   self.componentTypes = {}
   self.names = {}
   self.eventSystems = {}
   self.queries = {}
-
-  self:bootstrap()
-end
-
-function M:bootstrap()
-  self.dataTypes.entity = PrimitiveType.new("double")
-  self.dataTypes.tag = TagType.new()
-  self.dataTypes.value = ValueType.new()
-
-  self.componentTypes.entity = "entity"
-  self.componentTypes.dataType = "value"
-  self.componentTypes.name = "value"
 end
 
 function M:addEntity(components)
@@ -165,7 +159,7 @@ function M:addShard(tablet)
     size = 0,
   }
 
-  shard.entities = self.dataTypes.entity:allocateArray(tablet.shardCapacity)
+  shard.entities = self.dataTypes.number:allocateArray(tablet.shardCapacity)
 
   for component in pairs(tablet.archetype) do
     local typeName = self.componentTypes[component]
