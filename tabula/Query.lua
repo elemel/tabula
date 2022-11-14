@@ -21,11 +21,15 @@ function M:init(engine, config)
   self.allOf = config.allOf or {}
   self.noneOf = config.noneOf or {}
 
+  self.tabletCount = 0
   self.tablets = {}
-  self:updateTablets()
 end
 
 function M:updateTablets()
+  if self.tabletCount == #self.engine.tablets then
+    return
+  end
+
   tableMod.clear(self.tablets)
 
   for _, tablet in ipairs(self.engine.tablets) do
@@ -36,9 +40,13 @@ function M:updateTablets()
       table.insert(self.tablets, tablet)
     end
   end
+
+  self.tabletCount = #self.engine.tablets
 end
 
 function M:eachShard(callback)
+  self:updateTablets()
+
   if #self.allOf == 0 then
     self:eachShard0(callback)
   elseif #self.allOf == 1 then
@@ -113,6 +121,8 @@ function M:eachShard3(callback)
 end
 
 function M:eachRow(callback)
+  self:updateTablets()
+
   if #self.allOf == 0 then
     self:eachRow0(callback)
   elseif #self.allOf == 1 then
