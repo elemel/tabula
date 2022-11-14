@@ -19,4 +19,17 @@ function M.newRow(shard, index)
   return setmetatable(row, rowMetatable)
 end
 
+function swap(a, b)
+  assert(a._shard._tablet == b._shard._tablet)
+
+  a.entity, b.entity = b.entity, a.entity
+
+  for component in pairs(a._shard._tablet.archetype) do
+    a[component], b[component] = b[component], a[component]
+  end
+
+  a._shard, b._shard = b._shard, a._shard
+  a._index, b._index = b._index, a._index
+end
+
 return M
