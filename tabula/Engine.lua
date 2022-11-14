@@ -63,21 +63,22 @@ function M:addEntity(components)
   else
     shard = tablet.shards[#tablet.shards]
 
-    while shard.size > 0 and shard.entities[shard.size - 1] == 0 do
-      shard.size = shard.size - 1
+    while shard._size > 0 and shard.entity[shard._size - 1] == 0 do
+      shard._size = shard._size - 1
     end
 
-    if shard.size == tablet.shardCapacity then
+    if shard._size == tablet.shardCapacity then
       shard = self:addShard(tablet)
     end
   end
 
-  local index = shard.size
-  shard.size = shard.size + 1
+  local index = shard._size
+  shard._size = shard._size + 1
 
-  shard.entities[index] = entity
+  shard.entity[index] = entity
 
-  for component, column in pairs(shard.columns) do
+  for component, value in pairs(components) do
+    column = shard[component]
     column[index] = components[component]
   end
 
@@ -93,10 +94,10 @@ function M:removeEntity(entity)
   end
 
   local shard = row._shard
-  shard.entities[row._index] = 0
+  shard.entity[row._index] = 0
 
-  while shard.size > 0 and shard.entities[shard.size - 1] == 0 do
-    shard.size = shard.size - 1
+  while shard._size > 0 and shard.entity[shard._size - 1] == 0 do
+    shard._size = shard._size - 1
   end
 
   row._shard = nil
@@ -154,12 +155,11 @@ function M:addShard(tablet)
   )
 
   local shard = {
-    tablet = tablet,
-    columns = {},
-    size = 0,
+    _tablet = tablet,
+    _size = 0,
   }
 
-  shard.entities = self.dataTypes.number:allocateArray(tablet.shardCapacity)
+  shard.entity = self.dataTypes.number:allocateArray(tablet.shardCapacity)
 
   for component in pairs(tablet.archetype) do
     local typeName = self.componentTypes[component]
@@ -169,7 +169,7 @@ function M:addShard(tablet)
     end
 
     local dataType = self.dataTypes[typeName]
-    shard.columns[component] = dataType:allocateArray(tablet.shardCapacity)
+    shard[component] = dataType:allocateArray(tablet.shardCapacity)
   end
 
   table.insert(tablet.shards, shard)
