@@ -55,8 +55,8 @@ end
 function M:eachShard0(callback)
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
-      if shard._size >= 1 then
-        callback(shard._size, shard.entity)
+      if shard.size >= 1 then
+        callback(shard.size, shard.columns.entity)
       end
     end
   end
@@ -67,8 +67,8 @@ function M:eachShard1(callback)
 
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
-      if shard._size >= 1 then
-        callback(shard._size, shard.entity, shard[component1])
+      if shard.size >= 1 then
+        callback(shard.size, shard.columns.entity, shard.columns[component1])
       end
     end
   end
@@ -80,12 +80,12 @@ function M:eachShard2(callback)
 
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
-      if shard._size >= 1 then
+      if shard.size >= 1 then
         callback(
-          shard._size,
-          shard.entity,
-          shard[component1],
-          shard[component2]
+          shard.size,
+          shard.columns.entity,
+          shard.columns[component1],
+          shard.columns[component2]
         )
       end
     end
@@ -99,13 +99,13 @@ function M:eachShard3(callback)
 
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
-      if shard._size >= 1 then
+      if shard.size >= 1 then
         callback(
-          shard._size,
-          shard.entity,
-          shard[component1],
-          shard[component2],
-          shard[component3]
+          shard.size,
+          shard.columns.entity,
+          shard.columns[component1],
+          shard.columns[component2],
+          shard.columns[component3]
         )
       end
     end
@@ -135,10 +135,10 @@ end
 function M:eachRow0(callback)
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
-      if shard._size >= 1 then
-        local entities = shard.entity
+      if shard.size >= 1 then
+        local entities = shard.columns.entity
 
-        for i = 0, shard._size - 1 do
+        for i = 0, shard.size - 1 do
           if entities[i] ~= 0 then
             callback(i, entities)
           end
@@ -153,11 +153,11 @@ function M:eachRow1(callback)
 
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
-      if shard._size >= 1 then
-        local entities = shard.entity
-        local column1 = shard[component1]
+      if shard.size >= 1 then
+        local entities = shard.columns.entity
+        local column1 = shard.columns[component1]
 
-        for i = 0, shard._size - 1 do
+        for i = 0, shard.size - 1 do
           if entities[i] ~= 0 then
             callback(i, entities, column1)
           end
@@ -173,13 +173,13 @@ function M:eachRow2(callback)
 
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
-      if shard._size >= 1 then
-        local entities = shard.entity
+      if shard.size >= 1 then
+        local entities = shard.columns.entity
 
-        local column1 = shard[component1]
-        local column2 = shard[component2]
+        local column1 = shard.columns[component1]
+        local column2 = shard.columns[component2]
 
-        for i = 0, shard._size - 1 do
+        for i = 0, shard.size - 1 do
           if entities[i] ~= 0 then
             callback(i, entities, column1, column2)
           end
@@ -196,14 +196,14 @@ function M:eachRow3(callback)
 
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
-      if shard._size >= 1 then
-        local entities = shard.entity
+      if shard.size >= 1 then
+        local entities = shard.columns.entity
 
-        local column1 = shard[component1]
-        local column2 = shard[component2]
-        local column3 = shard[component3]
+        local column1 = shard.columns[component1]
+        local column2 = shard.columns[component2]
+        local column3 = shard.columns[component3]
 
-        for i = 0, shard._size - 1 do
+        for i = 0, shard.size - 1 do
           if entities[i] ~= 0 then
             callback(i, entities, column1, column2, column3)
           end
@@ -221,15 +221,15 @@ function M:eachRow4(callback)
 
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
-      if shard._size >= 1 then
-        local entities = shard.entity
+      if shard.size >= 1 then
+        local entities = shard.columns.entity
 
-        local column1 = shard[component1]
-        local column2 = shard[component2]
-        local column3 = shard[component3]
-        local column4 = shard[component4]
+        local column1 = shard.columns[component1]
+        local column2 = shard.columns[component2]
+        local column3 = shard.columns[component3]
+        local column4 = shard.columns[component4]
 
-        for i = 0, shard._size - 1 do
+        for i = 0, shard.size - 1 do
           if entities[i] ~= 0 then
             callback(i, entities, column1, column2, column3, column4)
           end
@@ -248,16 +248,16 @@ function M:eachRow5(callback)
 
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
-      if shard._size >= 1 then
-        local entities = shard.entity
+      if shard.size >= 1 then
+        local entities = shard.columns.entity
 
-        local column1 = shard[component1]
-        local column2 = shard[component2]
-        local column3 = shard[component3]
-        local column4 = shard[component4]
-        local column5 = shard[component5]
+        local column1 = shard.columns[component1]
+        local column2 = shard.columns[component2]
+        local column3 = shard.columns[component3]
+        local column4 = shard.columns[component4]
+        local column5 = shard.columns[component5]
 
-        for i = 0, shard._size - 1 do
+        for i = 0, shard.size - 1 do
           if entities[i] ~= 0 then
             callback(i, entities, column1, column2, column3, column4, column5)
           end
@@ -277,17 +277,17 @@ function M:eachRow6(callback)
 
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
-      if shard._size >= 1 then
-        local entities = shard.entity
+      if shard.size >= 1 then
+        local entities = shard.columns.entity
 
-        local column1 = shard[component1]
-        local column2 = shard[component2]
-        local column3 = shard[component3]
-        local column4 = shard[component4]
-        local column5 = shard[component5]
-        local column6 = shard[component6]
+        local column1 = shard.columns[component1]
+        local column2 = shard.columns[component2]
+        local column3 = shard.columns[component3]
+        local column4 = shard.columns[component4]
+        local column5 = shard.columns[component5]
+        local column6 = shard.columns[component6]
 
-        for i = 0, shard._size - 1 do
+        for i = 0, shard.size - 1 do
           if entities[i] ~= 0 then
             callback(
               i,

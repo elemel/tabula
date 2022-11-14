@@ -6,6 +6,9 @@ local Query = require("tabula.Query")
 local ValueType = require("tabula.ValueType")
 
 function drawBoxes(engine)
+  love.graphics.push("all")
+  love.graphics.setBlendMode("add")
+
   engine.queries.drawBoxes:eachRow(
     function(i, entities, boxes, colors, positions)
       love.graphics.setColor(colors[i].r, colors[i].g, colors[i].b, colors[i].a)
@@ -19,6 +22,8 @@ function drawBoxes(engine)
       )
     end
   )
+
+  love.graphics.pop()
 end
 
 function handleMouseMoved(engine, x, y, dx, dy, isTouch)
@@ -109,13 +114,21 @@ function updatePaddleCollisions(engine, dt)
 end
 
 function drawFps(engine)
+  local text = love.timer.getFPS() .. " FPS"
+  local font = love.graphics.getFont()
+
+  local width = font:getWidth(text)
+  local height = font:getHeight()
+
+  love.graphics.setColor(0, 0, 0, 1)
+  love.graphics.rectangle("fill", 0, 0, width, height)
+
   love.graphics.setColor(1, 1, 1, 1)
-  love.graphics.print(love.timer.getFPS())
+  love.graphics.print(text)
 end
 
 function love.load()
   love.mouse.setVisible(false)
-  love.graphics.setBlendMode("add")
 
   engine = engine.new()
 
@@ -176,7 +189,7 @@ function love.load()
     position = { 800, 300 },
   })
 
-  for i = 1, 256 do
+  for i = 1, 1000 do
     local centerX = love.math.randomNormal(100, 400)
     local centerY = love.math.randomNormal(100, 300)
 

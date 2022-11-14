@@ -20,11 +20,9 @@ function M.newRow(shard, index)
 end
 
 function swap(a, b)
-  assert(a._shard._tablet == b._shard._tablet)
+  assert(a._shard.tablet == b._shard.tablet)
 
-  a.entity, b.entity = b.entity, a.entity
-
-  for component in pairs(a._shard._tablet.archetype) do
+  for component in pairs(a._shard.columns) do
     a[component], b[component] = b[component], a[component]
   end
 
