@@ -1,7 +1,7 @@
 local Class = require("tabula.Class")
-local PrimitiveType = require("tabula.PrimitiveType")
+local CType = require("tabula.CType")
+local ffi = require("ffi")
 local rowMod = require("tabula.row")
-local StructType = require("tabula.StructType")
 local tableMod = require("tabula.table")
 local TagType = require("tabula.TagType")
 local lton = require("lton")
@@ -37,8 +37,8 @@ function M:init()
   self.nextEntity = 1
 
   self.dataTypes = {
-    boolean = PrimitiveType.new("bool"),
-    number = PrimitiveType.new("double"),
+    boolean = CType.new(ffi.typeof("bool[?]")),
+    number = CType.new(ffi.typeof("double[?]")),
     tag = TagType.new(),
     value = ValueType.new(),
   }

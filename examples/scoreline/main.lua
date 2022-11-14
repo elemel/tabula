@@ -1,8 +1,9 @@
-local Query = require("tabula.Query")
-local engine = require("tabula.engine")
-local StructType = require("tabula.StructType")
-local ValueType = require("tabula.ValueType")
 local colorMod = require("tabula.color")
+local CType = require("tabula.CType")
+local ffi = require("ffi")
+local engine = require("tabula.engine")
+local Query = require("tabula.Query")
+local ValueType = require("tabula.ValueType")
 
 function drawBoxes(engine)
   engine.queries.drawBoxes:eachRow(
@@ -118,19 +119,20 @@ function love.load()
 
   engine = engine.new()
 
-  engine.dataTypes.vec2 = StructType.new(
-    "vec2",
-    [[
-    float x, y;
-  ]]
-  )
+  ffi.cdef([[
+    struct Vec2 {
+      float x, y;
+    }
+  ]])
 
-  engine.dataTypes.color4 = StructType.new(
-    "color4",
-    [[
-    float r, g, b, a;
-  ]]
-  )
+  ffi.cdef([[
+    struct Color4 {
+      float r, g, b, a;
+    }
+  ]])
+
+  engine.dataTypes.vec2 = CType.new(ffi.typeof("struct Vec2[?]"))
+  engine.dataTypes.color4 = CType.new(ffi.typeof("struct Color4[?]"))
 
   engine.componentTypes.position = "vec2"
   engine.componentTypes.previousPosition = "vec2"
