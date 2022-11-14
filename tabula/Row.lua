@@ -1,19 +1,22 @@
 local M = {}
 
-function M.new(shard, index)
-  return setmetatable({ _shard = shard, _index = index }, M)
-end
+local rowMetatable = {
+  __index = function(row, component)
+    local column = row._shard.columns[component]
+    return column and column[row._index]
+  end,
 
-function M:__index(component)
-  local column = self._shard.columns[component]
-  return column and column[self._index]
-end
+  __newindex = function(row, component, value)
+    local column = row._shard.columns[component]
+    assert(value ~= nil)
+    assert(column ~= nil)
+    column[row._index] = value
+  end,
+}
 
-function M:__newindex(component, value)
-  local column = self._shard.columns[component]
-  assert(value ~= nil)
-  assert(column ~= nil)
-  column[self._index] = value
+function M.newRow(shard, index)
+  local row = { _shard = shard, _index = index }
+  return setmetatable(row, rowMetatable)
 end
 
 return M

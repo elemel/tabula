@@ -1,6 +1,6 @@
 local Class = require("tabula.Class")
 local PrimitiveType = require("tabula.PrimitiveType")
-local Row = require("tabula.Row")
+local rowMod = require("tabula.row")
 local StructType = require("tabula.StructType")
 local tableMod = require("tabula.table")
 local TagType = require("tabula.TagType")
@@ -81,7 +81,7 @@ function M:addEntity(components)
     column[index] = components[component]
   end
 
-  self.rows[entity] = Row.new(shard, index)
+  self.rows[entity] = rowMod.newRow(shard, index)
   return entity
 end
 
