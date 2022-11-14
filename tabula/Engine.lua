@@ -3,6 +3,7 @@ local CType = require("tabula.CType")
 local ffi = require("ffi")
 local rowMod = require("tabula.row")
 local tableMod = require("tabula.table")
+local Tablet = require("tabula.Tablet")
 local TagType = require("tabula.TagType")
 local lton = require("lton")
 local ValueType = require("tabula.ValueType")
@@ -20,19 +21,6 @@ end
 function M:init()
   print("Adding tablet #1 for archetype { }")
 
-  self.rootTablet = {
-    archetype = {},
-
-    shards = {},
-    shardCapacity = 256,
-
-    parents = {},
-    children = {},
-  }
-
-  self.tablets = { self.rootTablet }
-  self.shards = {}
-
   self.rows = {}
   self.nextEntity = 1
 
@@ -43,10 +31,14 @@ function M:init()
     value = ValueType.new(),
   }
 
-  self.componentTypes = {}
+  self.componentTypes = { entity = "number" }
   self.names = {}
   self.eventSystems = {}
   self.queries = {}
+
+  self.rootTablet = Tablet.new(self, {})
+  self.tablets = { self.rootTablet }
+  self.shards = {}
 end
 
 function M:addEntity(components)
@@ -124,15 +116,7 @@ function M:addTablet(archetype)
           .. formatArchetype(childArchetype)
       )
 
-      childTablet = {
-        archetype = childArchetype,
-
-        shards = {},
-        shardCapacity = 256,
-
-        parents = {},
-        children = {},
-      }
+      childTablet = Tablet.new(self, childArchetype)
 
       parentTablet.children[component] = childTablet
       childTablet.parents[component] = parentTablet
