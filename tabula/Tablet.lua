@@ -21,12 +21,6 @@ function M:init(registry, archetype)
     self.columnTypes[component] = assert(self.registry.dataTypes[typeName])
   end
 
-  self.defaultValues = {}
-
-  for component, columnType in pairs(self.columnTypes) do
-    self.defaultValues[component] = columnType.defaultValue
-  end
-
   self.shards = {}
   self.shardCapacity = 256
 
@@ -34,7 +28,7 @@ function M:init(registry, archetype)
   self.children = {}
 end
 
-function M:addRow(values)
+function M:pushRow()
   local shards = self.shards
 
   if #shards == 0 or shards[#shards].size == self.shardCapacity then
@@ -63,16 +57,54 @@ function M:addRow(values)
   local index = shard.size
   shard.size = shard.size + 1
 
-  for component, column in pairs(shard.columns) do
-    column[index] = values[component]
+  return shard, index
+end
+
+function M:popRow()
+  local shard = self.shards[#self.shards]
+  local index = shard.size - 1
+
+  for component, columnType in pairs(self.columnTypes) do
+    local column = shard.columns[component]
+    column[index] = columnType.defaultValue
+  end
+
+  shard.size = shard.size - 1
+
+  if shard.size == 0 then
+    table.remove(self.shards)
+  end
+end
+
+function M:addRow(values)
+  local shard, index = self:pushRow()
+
+  for component, columnType in pairs(self.columnTypes) do
+    local column = shard.columns[component]
+    column[index] = tableMod.get(values, component, columnType.defaultValue)
   end
 
   return shard, index
 end
 
+function M:copyRow(targetShard, targetIndex, sourceShard, sourceIndex)
+  assert(targetShard.tablet == self)
+
+  for component, targetColumn in pairs(targetShard.columns) do
+    local sourceColumn = sourceShard[component]
+
+    if sourceColumn ~= nil then
+      targetColumn[targetIndex] = sourceColumn[sourceIndex]
+    end
+  end
+end
+
 function M:removeRow(shard, index)
   local lastShard = self.shards[#self.shards]
   local lastIndex = lastShard.size - 1
+
+  self:copyRow(shard, index, lastShard, lastIndex)
+  self:popRow()
 end
 
 return M
