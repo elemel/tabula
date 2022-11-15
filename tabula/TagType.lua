@@ -11,6 +11,7 @@ local tagArray = setmetatable({}, {
 })
 
 local M = Class.new()
+M.defaultValue = true
 
 function M:init() end
 

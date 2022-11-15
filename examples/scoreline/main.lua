@@ -133,19 +133,19 @@ function love.load()
   registry = registry.new()
 
   ffi.cdef([[
-    struct Vec2 {
+    typedef struct {
       float x, y;
-    }
+    } Vec2
   ]])
 
   ffi.cdef([[
-    struct Color4 {
+    typedef struct {
       float r, g, b, a;
-    }
+    } Color4
   ]])
 
-  registry.dataTypes.vec2 = CType.new(ffi.typeof("struct Vec2[?]"))
-  registry.dataTypes.color4 = CType.new(ffi.typeof("struct Color4[?]"))
+  registry.dataTypes.vec2 = CType.new("Vec2")
+  registry.dataTypes.color4 = CType.new("Color4")
 
   registry.componentTypes.position = "vec2"
   registry.componentTypes.previousPosition = "vec2"

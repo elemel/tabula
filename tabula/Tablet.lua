@@ -21,6 +21,12 @@ function M:init(registry, archetype)
     self.columnTypes[component] = assert(self.registry.dataTypes[typeName])
   end
 
+  self.defaultValues = {}
+
+  for component, columnType in pairs(self.columnTypes) do
+    self.defaultValues[component] = columnType.defaultValue
+  end
+
   self.shards = {}
   self.shardCapacity = 256
 
@@ -28,7 +34,7 @@ function M:init(registry, archetype)
   self.children = {}
 end
 
-function M:addRow(components)
+function M:addRow(values)
   local shards = self.shards
 
   if #shards == 0 or shards[#shards].size == self.shardCapacity then
@@ -58,10 +64,15 @@ function M:addRow(components)
   shard.size = shard.size + 1
 
   for component, column in pairs(shard.columns) do
-    column[index] = components[component]
+    column[index] = values[component]
   end
 
   return shard, index
+end
+
+function M:removeRow(shard, index)
+  local lastShard = self.shards[#self.shards]
+  local lastIndex = lastShard.size - 1
 end
 
 return M
