@@ -38,44 +38,23 @@ function M:init()
 
   self.rootTablet = Tablet.new(self, {})
   self.tablets = { self.rootTablet }
-  self.shards = {}
 end
 
 function M:addEntity(components)
-  local entity = self.nextEntity
+  local components = tableMod.copy(components)
+
+  components.entity = self.nextEntity
   self.nextEntity = self.nextEntity + 1
 
   local archetype = keySet(components)
+  archetype.entity = nil
 
   local tablet = self:addTablet(archetype)
-  local shard
 
-  if #tablet.shards == 0 then
-    shard = self:addShard(tablet)
-  else
-    shard = tablet.shards[#tablet.shards]
-
-    while shard.size > 0 and shard.columns.entity[shard.size - 1] == 0 do
-      shard.size = shard.size - 1
-    end
-
-    if shard.size == tablet.shardCapacity then
-      shard = self:addShard(tablet)
-    end
-  end
-
-  local index = shard.size
-  shard.size = shard.size + 1
-
-  shard.columns.entity[index] = entity
-
-  for component, value in pairs(components) do
-    column = shard.columns[component]
-    column[index] = components[component]
-  end
-
-  self.rows[entity] = rowMod.newRow(shard, index)
-  return entity
+  local shard, index = tablet:insertRow(components)
+  local row = rowMod.newRow(shard, index)
+  self.rows[components.entity] = row
+  return row
 end
 
 function M:removeEntity(entity)
@@ -128,38 +107,6 @@ function M:addTablet(archetype)
   end
 
   return parentTablet
-end
-
-function M:addShard(tablet)
-  print(
-    "Adding shard #"
-      .. (#tablet.shards + 1)
-      .. " for archetype "
-      .. formatArchetype(tablet.archetype)
-  )
-
-  local shard = {
-    tablet = tablet,
-    columns = {},
-    size = 0,
-  }
-
-  shard.columns.entity = self.dataTypes.number:allocateArray(tablet.shardCapacity)
-
-  for component in pairs(tablet.archetype) do
-    local typeName = self.componentTypes[component]
-
-    if not typeName then
-      error("No such component: " .. component)
-    end
-
-    local dataType = self.dataTypes[typeName]
-    shard.columns[component] = dataType:allocateArray(tablet.shardCapacity)
-  end
-
-  table.insert(tablet.shards, shard)
-  table.insert(self.shards, shard)
-  return shard
 end
 
 function M:addEvent(event)

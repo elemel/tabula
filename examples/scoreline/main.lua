@@ -189,7 +189,7 @@ function love.load()
     position = { 800, 300 },
   })
 
-  for i = 1, 1000 do
+  for i = 1, 65536 do
     local centerX = love.math.randomNormal(100, 400)
     local centerY = love.math.randomNormal(100, 300)
 
@@ -215,7 +215,7 @@ function love.load()
     local a = love.math.randomNormal(0.1, 0.5)
 
     engine:addEntity({
-      box = { 10, 10 },
+      box = { 2, 2 },
       color = { r, g, b, a },
       isBall = true,
       previousPosition = { x, y },
