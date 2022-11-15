@@ -135,7 +135,7 @@ end
 function M:eachRow0(callback)
   for _, tablet in ipairs(self.tablets) do
     for _, shard in ipairs(tablet.shards) do
-      for i = 0, shard.size - 1 do
+      for i = shard.size - 1, 0, -1 do
         callback(i)
       end
     end
@@ -149,7 +149,7 @@ function M:eachRow1(callback)
     for _, shard in ipairs(tablet.shards) do
       local column1 = shard.columns[component1]
 
-      for i = 0, shard.size - 1 do
+      for i = shard.size - 1, 0, -1 do
         callback(i, column1)
       end
     end
@@ -165,7 +165,7 @@ function M:eachRow2(callback)
       local column1 = shard.columns[component1]
       local column2 = shard.columns[component2]
 
-      for i = 0, shard.size - 1 do
+      for i = shard.size - 1, 0, -1 do
         callback(i, column1, column2)
       end
     end
@@ -183,7 +183,7 @@ function M:eachRow3(callback)
       local column2 = shard.columns[component2]
       local column3 = shard.columns[component3]
 
-      for i = 0, shard.size - 1 do
+      for i = shard.size - 1, 0, -1 do
         callback(i, column1, column2, column3)
       end
     end
@@ -203,7 +203,7 @@ function M:eachRow4(callback)
       local column3 = shard.columns[component3]
       local column4 = shard.columns[component4]
 
-      for i = 0, shard.size - 1 do
+      for i = shard.size - 1, 0, -1 do
         callback(i, column1, column2, column3, column4)
       end
     end
@@ -225,7 +225,7 @@ function M:eachRow5(callback)
       local column4 = shard.columns[component4]
       local column5 = shard.columns[component5]
 
-      for i = 0, shard.size - 1 do
+      for i = shard.size - 1, 0, -1 do
         callback(i, column1, column2, column3, column4, column5)
       end
     end
@@ -249,7 +249,7 @@ function M:eachRow6(callback)
       local column5 = shard.columns[component5]
       local column6 = shard.columns[component6]
 
-      for i = 0, shard.size - 1 do
+      for i = shard.size - 1, 0, -1 do
         callback(
           i,
           column1,
