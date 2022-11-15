@@ -20,7 +20,11 @@ local mt = {
 }
 
 function M.new(shard, index)
-  local entry = { _shard = shard, _index = index }
+  local entry = {
+    _shard = assert(shard),
+    _index = assert(index),
+  }
+
   return setmetatable(entry, mt)
 end
 
