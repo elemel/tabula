@@ -4,7 +4,7 @@ local tableMod = require("tabula.table")
 local M = Class.new()
 
 local function formatArchetype(archetype)
-  return "{ " .. table.concat(tableMod.sortedKeys(archetype), ", ") .. " }"
+  return "{ " .. table.concat(archetype, ", ") .. " }"
 end
 
 function M:init(registry, archetype)
@@ -16,7 +16,7 @@ function M:init(registry, archetype)
   local entityTypeName = assert(self.registry.componentTypes.entity)
   self.columnTypes.entity = assert(self.registry.dataTypes[entityTypeName])
 
-  for component in pairs(self.archetype) do
+  for _, component in ipairs(self.archetype) do
     local typeName = assert(self.registry.componentTypes[component])
     self.columnTypes[component] = assert(self.registry.dataTypes[typeName])
   end

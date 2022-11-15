@@ -118,4 +118,14 @@ function M.clear(t)
   end
 end
 
+function M.valueSet(t, result)
+  result = result or {}
+
+  for _, v in ipairs(t) do
+    result[v] = true
+  end
+
+  return result
+end
+
 return M
