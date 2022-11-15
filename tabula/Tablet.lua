@@ -40,10 +40,10 @@ function M:addRow(values)
   if #shards == 0 or shards[#shards].size == self.shardCapacity then
     print(
       "Adding shard #"
-      .. (#shards + 1)
-      .. " for archetype "
-      .. formatArchetype(self.archetype)
-      )
+        .. (#shards + 1)
+        .. " for archetype "
+        .. formatArchetype(self.archetype)
+    )
 
     local shard = {
       tablet = self,
