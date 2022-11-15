@@ -18,7 +18,7 @@ function M:init(registry, archetype)
   self.children = {}
 end
 
-function M:insertRow(components)
+function M:addRow(components)
   local shards = self.shards
 
   if #shards == 0 or shards[#shards].size == self.shardCapacity then

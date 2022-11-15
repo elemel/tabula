@@ -1,7 +1,7 @@
 local Class = require("tabula.Class")
 local CType = require("tabula.CType")
+local Entry = require("tabula.Entry")
 local ffi = require("ffi")
-local rowMod = require("tabula.row")
 local tableMod = require("tabula.table")
 local Tablet = require("tabula.Tablet")
 local TagType = require("tabula.TagType")
@@ -21,7 +21,7 @@ end
 function M:init()
   print("Adding tablet #1 for archetype { }")
 
-  self.rows = {}
+  self.entries = {}
   self.nextEntity = 1
 
   self.dataTypes = {
@@ -40,7 +40,7 @@ function M:init()
   self.tablets = { self.rootTablet }
 end
 
-function M:addEntity(components)
+function M:addEntry(components)
   local components = tableMod.copy(components)
 
   components.entity = self.nextEntity
@@ -51,30 +51,14 @@ function M:addEntity(components)
 
   local tablet = self:addTablet(archetype)
 
-  local shard, index = tablet:insertRow(components)
-  local row = rowMod.newRow(shard, index)
-  self.rows[components.entity] = row
-  return row
+  local shard, index = tablet:addRow(components)
+  local entry = Entry.new(shard, index)
+  self.entries[components.entity] = entry
+  return entry
 end
 
-function M:removeEntity(entity)
-  local row = self.rows[entity]
-
-  if not row then
-    error("No such entity: " .. entity)
-  end
-
-  local shard = row._shard
-  shard.columns.entity[row._index] = 0
-
-  while shard.size > 0 and shard.columns.entity[shard.size - 1] == 0 do
-    shard.size = shard.size - 1
-  end
-
-  row._shard = nil
-  row._index = nil
-
-  self.rows[entity] = nil
+function M:removeEntry(entity)
+  error("Not implemented")
 end
 
 function M:addTablet(archetype)
