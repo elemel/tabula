@@ -19,6 +19,16 @@ local mt = {
   end,
 }
 
+local invalidMt = {
+  __index = function(entry, component)
+    error("Invalid entry")
+  end,
+
+  __newindex = function(entry, component, value)
+    error("Invalid entry")
+  end,
+}
+
 function M.new(shard, index)
   local entry = {
     _shard = assert(shard),
@@ -26,6 +36,10 @@ function M.new(shard, index)
   }
 
   return setmetatable(entry, mt)
+end
+
+function M.invalidate(entry)
+  return setmetatable(entry, invalidMt)
 end
 
 return M
