@@ -9,19 +9,17 @@ function drawBoxes(registry)
   love.graphics.push("all")
   love.graphics.setBlendMode("add")
 
-  registry.queries.drawBoxes:eachRow(
-    function(i, boxes, colors, positions)
-      love.graphics.setColor(colors[i].r, colors[i].g, colors[i].b, colors[i].a)
+  registry.queries.drawBoxes:eachRow(function(i, boxes, colors, positions)
+    love.graphics.setColor(colors[i].r, colors[i].g, colors[i].b, colors[i].a)
 
-      love.graphics.rectangle(
-        "fill",
-        positions[i].x - 0.5 * boxes[i].x,
-        positions[i].y - 0.5 * boxes[i].y,
-        boxes[i].x,
-        boxes[i].y
-      )
-    end
-  )
+    love.graphics.rectangle(
+      "fill",
+      positions[i].x - 0.5 * boxes[i].x,
+      positions[i].y - 0.5 * boxes[i].y,
+      boxes[i].x,
+      boxes[i].y
+    )
+  end)
 
   love.graphics.pop()
 end
@@ -68,49 +66,47 @@ function updateWallCollisions(registry, dt)
 end
 
 function updatePaddleCollisions(registry, dt)
-  registry.queries.updatePaddleCollisions:eachRow(
-    function(i, boxes, positions)
-      local paddleBox = boxes[i]
-      local paddlePosition = positions[i]
+  registry.queries.updatePaddleCollisions:eachRow(function(i, boxes, positions)
+    local paddleBox = boxes[i]
+    local paddlePosition = positions[i]
 
-      registry.queries.updatePaddleBallCollisions:eachRow(
-        function(i, boxes, colors, positions, previousPositions, velocities)
-          if
-            positions[i].y - 0.5 * boxes[i].y
-              < paddlePosition.y + 0.5 * paddleBox.y
-            and positions[i].y + 0.5 * boxes[i].y
-              > paddlePosition.y - 0.5 * paddleBox.y
-          then
-            if velocities[i].x < 0 and positions[i].x < 400 then
-              if
-                previousPositions[i].x - 0.5 * boxes[i].x
-                  >= paddlePosition.x + 0.5 * paddleBox.x
-                and positions[i].x - 0.5 * boxes[i].x
-                  < paddlePosition.x + 0.5 * paddleBox.x
-              then
-                velocities[i].x = -velocities[i].x
+    registry.queries.updatePaddleBallCollisions:eachRow(
+      function(i, boxes, colors, positions, previousPositions, velocities)
+        if
+          positions[i].y - 0.5 * boxes[i].y
+            < paddlePosition.y + 0.5 * paddleBox.y
+          and positions[i].y + 0.5 * boxes[i].y
+            > paddlePosition.y - 0.5 * paddleBox.y
+        then
+          if velocities[i].x < 0 and positions[i].x < 400 then
+            if
+              previousPositions[i].x - 0.5 * boxes[i].x
+                >= paddlePosition.x + 0.5 * paddleBox.x
+              and positions[i].x - 0.5 * boxes[i].x
+                < paddlePosition.x + 0.5 * paddleBox.x
+            then
+              velocities[i].x = -velocities[i].x
 
-                colors[i].r = velocities[i].x
-                colors[i].b = -velocities[i].x
-              end
-            elseif velocities[i].x > 0 and positions[i].x > 400 then
-              if
-                previousPositions[i].x + 0.5 * boxes[i].x
-                  <= paddlePosition.x - 0.5 * paddleBox.x
-                and positions[i].x + 0.5 * boxes[i].x
-                  > paddlePosition.x - 0.5 * paddleBox.x
-              then
-                velocities[i].x = -velocities[i].x
+              colors[i].r = velocities[i].x
+              colors[i].b = -velocities[i].x
+            end
+          elseif velocities[i].x > 0 and positions[i].x > 400 then
+            if
+              previousPositions[i].x + 0.5 * boxes[i].x
+                <= paddlePosition.x - 0.5 * paddleBox.x
+              and positions[i].x + 0.5 * boxes[i].x
+                > paddlePosition.x - 0.5 * paddleBox.x
+            then
+              velocities[i].x = -velocities[i].x
 
-                colors[i].r = velocities[i].x
-                colors[i].b = -velocities[i].x
-              end
+              colors[i].r = velocities[i].x
+              colors[i].b = -velocities[i].x
             end
           end
         end
-      )
-    end
-  )
+      end
+    )
+  end)
 end
 
 function drawFps(registry)
@@ -133,19 +129,19 @@ function love.load()
   registry = registry.new()
 
   ffi.cdef([[
-    struct Vec2 {
+    typedef struct {
       float x, y;
-    }
+    } Vec2
   ]])
 
   ffi.cdef([[
-    struct Color4 {
+    typedef struct {
       float r, g, b, a;
-    }
+    } Color4
   ]])
 
-  registry.dataTypes.vec2 = CType.new(ffi.typeof("struct Vec2[?]"))
-  registry.dataTypes.color4 = CType.new(ffi.typeof("struct Color4[?]"))
+  registry.dataTypes.vec2 = CType.new("Vec2")
+  registry.dataTypes.color4 = CType.new("Color4")
 
   registry.componentTypes.position = "vec2"
   registry.componentTypes.previousPosition = "vec2"

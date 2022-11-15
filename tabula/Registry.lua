@@ -25,8 +25,8 @@ function M:init()
   self.nextEntity = 1
 
   self.dataTypes = {
-    boolean = CType.new(ffi.typeof("bool[?]")),
-    number = CType.new(ffi.typeof("double[?]")),
+    boolean = CType.new("bool"),
+    number = CType.new("double"),
     tag = TagType.new(),
     value = ValueType.new(),
   }
@@ -43,8 +43,16 @@ end
 function M:addEntry(values)
   local values = tableMod.copy(values)
 
-  values.entity = self.nextEntity
-  self.nextEntity = self.nextEntity + 1
+  if values.entity then
+    assert(not self.entries[entity], "Duplicate entry")
+  else
+    while self.entries[self.nextEntity] do
+      self.nextEntity = self.nextEntity + 1
+    end
+
+    values.entity = self.nextEntity
+    self.nextEntity = self.nextEntity + 1
+  end
 
   local archetypeSet = keySet(values)
   archetypeSet.entity = nil
@@ -59,7 +67,10 @@ function M:addEntry(values)
 end
 
 function M:removeEntry(entity)
-  error("Not implemented")
+  local entry = assert(self.entries[entity], "No such entry")
+  entry._shard.tablet:removeRow(entry._shard, entry._index)
+  Entry.invalidate(entry)
+  self.entries[entity] = nil
 end
 
 function M:addTablet(archetype)
