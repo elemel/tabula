@@ -1,11 +1,11 @@
 local Class = require("tabula.Class")
 local tableMod = require("tabula.table")
 
-local function match(pattern, archetype)
+local function match(pattern, columnTypes)
   local result = 0
 
   for _, component in ipairs(pattern) do
-    if archetype[component] then
+    if columnTypes[component] then
       result = result + 1
     end
   end
@@ -33,8 +33,8 @@ function M:updateTablets()
   tableMod.clear(self.tablets)
 
   for _, tablet in ipairs(self.registry.tablets) do
-    local allOfCount = match(self.allOf, tablet.archetype)
-    local noneOfCount = match(self.noneOf, tablet.archetype)
+    local allOfCount = match(self.allOf, tablet.columnTypes)
+    local noneOfCount = match(self.noneOf, tablet.columnTypes)
 
     if allOfCount == #self.allOf and noneOfCount == 0 then
       table.insert(self.tablets, tablet)
