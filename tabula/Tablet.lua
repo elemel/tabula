@@ -7,8 +7,8 @@ local function formatArchetype(archetype)
   return "{ " .. table.concat(tableMod.sortedKeys(archetype), ", ") .. " }"
 end
 
-function M:init(engine, archetype)
-  self.engine = assert(engine)
+function M:init(registry, archetype)
+  self.registry = assert(registry)
   self.archetype = tableMod.copy(archetype)
 
   self.shards = {}
@@ -57,8 +57,8 @@ function M:insertRow(components)
 end
 
 function M:allocateColumn(component)
-  local componentType = assert(self.engine.componentTypes[component])
-  local dataType = assert(self.engine.dataTypes[componentType])
+  local componentType = assert(self.registry.componentTypes[component])
+  local dataType = assert(self.registry.dataTypes[componentType])
   return dataType:allocateArray(self.shardCapacity)
 end
 

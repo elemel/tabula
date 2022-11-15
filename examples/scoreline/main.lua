@@ -1,15 +1,15 @@
 local colorMod = require("tabula.color")
 local CType = require("tabula.CType")
 local ffi = require("ffi")
-local engine = require("tabula.engine")
+local registry = require("tabula.registry")
 local Query = require("tabula.Query")
 local ValueType = require("tabula.ValueType")
 
-function drawBoxes(engine)
+function drawBoxes(registry)
   love.graphics.push("all")
   love.graphics.setBlendMode("add")
 
-  engine.queries.drawBoxes:eachRow(
+  registry.queries.drawBoxes:eachRow(
     function(i, entities, boxes, colors, positions)
       love.graphics.setColor(colors[i].r, colors[i].g, colors[i].b, colors[i].a)
 
@@ -26,14 +26,14 @@ function drawBoxes(engine)
   love.graphics.pop()
 end
 
-function handleMouseMoved(engine, x, y, dx, dy, isTouch)
-  engine.queries.handleMouseMoved:eachRow(function(i, entities, positions)
+function handleMouseMoved(registry, x, y, dx, dy, isTouch)
+  registry.queries.handleMouseMoved:eachRow(function(i, entities, positions)
     positions[i].y = y
   end)
 end
 
-function updateVelocityPositions(engine, dt)
-  engine.queries.updateVelocityPositions:eachRow(
+function updateVelocityPositions(registry, dt)
+  registry.queries.updateVelocityPositions:eachRow(
     function(i, entities, positions, previousPositions, velocities)
       previousPositions[i] = positions[i]
 
@@ -43,8 +43,8 @@ function updateVelocityPositions(engine, dt)
   )
 end
 
-function updateWallCollisions(engine, dt)
-  engine.queries.updateWallCollisions:eachRow(
+function updateWallCollisions(registry, dt)
+  registry.queries.updateWallCollisions:eachRow(
     function(i, entities, boxes, positions, velocities)
       if positions[i].y - 0.5 * boxes[i].y < 0 and velocities[i].y < 0 then
         velocities[i].y = -velocities[i].y
@@ -67,13 +67,13 @@ function updateWallCollisions(engine, dt)
   )
 end
 
-function updatePaddleCollisions(engine, dt)
-  engine.queries.updatePaddleCollisions:eachRow(
+function updatePaddleCollisions(registry, dt)
+  registry.queries.updatePaddleCollisions:eachRow(
     function(i, entities, boxes, positions)
       local paddleBox = boxes[i]
       local paddlePosition = positions[i]
 
-      engine.queries.updatePaddleBallCollisions:eachRow(
+      registry.queries.updatePaddleBallCollisions:eachRow(
         function(i, entities, boxes, colors, positions, previousPositions, velocities)
           if
             positions[i].y - 0.5 * boxes[i].y
@@ -113,7 +113,7 @@ function updatePaddleCollisions(engine, dt)
   )
 end
 
-function drawFps(engine)
+function drawFps(registry)
   local text = love.timer.getFPS() .. " FPS"
   local font = love.graphics.getFont()
 
@@ -130,7 +130,7 @@ end
 function love.load()
   love.mouse.setVisible(false)
 
-  engine = engine.new()
+  registry = registry.new()
 
   ffi.cdef([[
     struct Vec2 {
@@ -144,26 +144,26 @@ function love.load()
     }
   ]])
 
-  engine.dataTypes.vec2 = CType.new(ffi.typeof("struct Vec2[?]"))
-  engine.dataTypes.color4 = CType.new(ffi.typeof("struct Color4[?]"))
+  registry.dataTypes.vec2 = CType.new(ffi.typeof("struct Vec2[?]"))
+  registry.dataTypes.color4 = CType.new(ffi.typeof("struct Color4[?]"))
 
-  engine.componentTypes.position = "vec2"
-  engine.componentTypes.previousPosition = "vec2"
-  engine.componentTypes.velocity = "vec2"
-  engine.componentTypes.box = "vec2"
-  engine.componentTypes.color = "color4"
-  engine.componentTypes.isPaddle = "tag"
-  engine.componentTypes.isPlayer = "tag"
-  engine.componentTypes.isBall = "tag"
+  registry.componentTypes.position = "vec2"
+  registry.componentTypes.previousPosition = "vec2"
+  registry.componentTypes.velocity = "vec2"
+  registry.componentTypes.box = "vec2"
+  registry.componentTypes.color = "color4"
+  registry.componentTypes.isPaddle = "tag"
+  registry.componentTypes.isPlayer = "tag"
+  registry.componentTypes.isBall = "tag"
 
-  engine:addEntity({
+  registry:addEntity({
     box = { 10, 50 },
     color = { 0.9, 0.3, 0.1, 1 },
     isPaddle = true,
     position = { 100, 300 },
   })
 
-  engine:addEntity({
+  registry:addEntity({
     box = { 10, 50 },
     color = { 0, 0.5, 1, 1 },
     isPaddle = true,
@@ -171,19 +171,19 @@ function love.load()
     position = { 700, 300 },
   })
 
-  engine:addEntity({
+  registry:addEntity({
     box = { 2, 600 },
     color = { 0.2, 0.8, 0, 1 },
     position = { 400, 300 },
   })
 
-  engine:addEntity({
+  registry:addEntity({
     box = { 2, 600 },
     color = { 1, 0.3, 0.7, 1 },
     position = { 0, 300 },
   })
 
-  engine:addEntity({
+  registry:addEntity({
     box = { 2, 600 },
     color = { 0.7, 0.3, 1, 1 },
     position = { 800, 300 },
@@ -214,7 +214,7 @@ function love.load()
 
     local a = love.math.randomNormal(0.1, 0.5)
 
-    engine:addEntity({
+    registry:addEntity({
       box = { 2, 2 },
       color = { r, g, b, a },
       isBall = true,
@@ -224,38 +224,38 @@ function love.load()
     })
   end
 
-  engine:addEvent("draw")
-  engine:addEvent("mouseMoved")
-  engine:addEvent("update")
+  registry:addEvent("draw")
+  registry:addEvent("mouseMoved")
+  registry:addEvent("update")
 
-  engine:addSystem("draw", drawBoxes)
-  engine:addSystem("draw", drawFps)
-  engine:addSystem("mouseMoved", handleMouseMoved)
-  engine:addSystem("update", updateVelocityPositions)
-  engine:addSystem("update", updateWallCollisions)
-  engine:addSystem("update", updatePaddleCollisions)
+  registry:addSystem("draw", drawBoxes)
+  registry:addSystem("draw", drawFps)
+  registry:addSystem("mouseMoved", handleMouseMoved)
+  registry:addSystem("update", updateVelocityPositions)
+  registry:addSystem("update", updateWallCollisions)
+  registry:addSystem("update", updatePaddleCollisions)
 
-  engine.queries.drawBoxes = Query.new(engine, {
+  registry.queries.drawBoxes = Query.new(registry, {
     allOf = { "box", "color", "position" },
   })
 
-  engine.queries.handleMouseMoved = Query.new(engine, {
+  registry.queries.handleMouseMoved = Query.new(registry, {
     allOf = { "position", "isPaddle", "isPlayer" },
   })
 
-  engine.queries.updateVelocityPositions = Query.new(engine, {
+  registry.queries.updateVelocityPositions = Query.new(registry, {
     allOf = { "position", "previousPosition", "velocity" },
   })
 
-  engine.queries.updateWallCollisions = Query.new(engine, {
+  registry.queries.updateWallCollisions = Query.new(registry, {
     allOf = { "box", "position", "velocity", "isBall" },
   })
 
-  engine.queries.updatePaddleCollisions = Query.new(engine, {
+  registry.queries.updatePaddleCollisions = Query.new(registry, {
     allOf = { "box", "position", "isPaddle" },
   })
 
-  engine.queries.updatePaddleBallCollisions = Query.new(engine, {
+  registry.queries.updatePaddleBallCollisions = Query.new(registry, {
     allOf = {
       "box",
       "color",
@@ -268,13 +268,13 @@ function love.load()
 end
 
 function love.draw(...)
-  engine:handleEvent("draw", ...)
+  registry:handleEvent("draw", ...)
 end
 
 function love.mousemoved(...)
-  engine:handleEvent("mouseMoved", ...)
+  registry:handleEvent("mouseMoved", ...)
 end
 
 function love.update(...)
-  engine:handleEvent("update", ...)
+  registry:handleEvent("update", ...)
 end

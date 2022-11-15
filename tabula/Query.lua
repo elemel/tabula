@@ -15,8 +15,8 @@ end
 
 local M = Class.new()
 
-function M:init(engine, config)
-  self.engine = assert(engine)
+function M:init(registry, config)
+  self.registry = assert(registry)
   config = config or {}
   self.allOf = config.allOf or {}
   self.noneOf = config.noneOf or {}
@@ -26,13 +26,13 @@ function M:init(engine, config)
 end
 
 function M:updateTablets()
-  if self.tabletCount == #self.engine.tablets then
+  if self.tabletCount == #self.registry.tablets then
     return
   end
 
   tableMod.clear(self.tablets)
 
-  for _, tablet in ipairs(self.engine.tablets) do
+  for _, tablet in ipairs(self.registry.tablets) do
     local allOfCount = match(self.allOf, tablet.archetype)
     local noneOfCount = match(self.noneOf, tablet.archetype)
 
@@ -41,7 +41,7 @@ function M:updateTablets()
     end
   end
 
-  self.tabletCount = #self.engine.tablets
+  self.tabletCount = #self.registry.tablets
 end
 
 function M:eachShard(callback)
