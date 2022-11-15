@@ -4,12 +4,22 @@ local tableMod = require("tabula.table")
 local M = Class.new()
 
 local function formatArchetype(archetype)
-  return "{ " .. table.concat(tableMod.sortedKeys(archetype), ", ") .. " }"
+  return "{ " .. table.concat(archetype, ", ") .. " }"
 end
 
 function M:init(registry, archetype)
   self.registry = assert(registry)
   self.archetype = tableMod.copy(archetype)
+
+  self.columnTypes = {}
+
+  local entityTypeName = assert(self.registry.componentTypes.entity)
+  self.columnTypes.entity = assert(self.registry.dataTypes[entityTypeName])
+
+  for _, component in ipairs(self.archetype) do
+    local typeName = assert(self.registry.componentTypes[component])
+    self.columnTypes[component] = assert(self.registry.dataTypes[typeName])
+  end
 
   self.shards = {}
   self.shardCapacity = 256
@@ -35,10 +45,8 @@ function M:addRow(components)
       size = 0,
     }
 
-    shard.columns.entity = self:allocateColumn("entity")
-
-    for component in pairs(self.archetype) do
-      shard.columns[component] = self:allocateColumn(component)
+    for component, columnType in pairs(self.columnTypes) do
+      shard.columns[component] = columnType:allocateArray(self.shardCapacity)
     end
 
     table.insert(shards, shard)
@@ -54,12 +62,6 @@ function M:addRow(components)
   end
 
   return shard, index
-end
-
-function M:allocateColumn(component)
-  local componentType = assert(self.registry.componentTypes[component])
-  local dataType = assert(self.registry.dataTypes[componentType])
-  return dataType:allocateArray(self.shardCapacity)
 end
 
 return M

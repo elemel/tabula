@@ -10,7 +10,7 @@ function drawBoxes(registry)
   love.graphics.setBlendMode("add")
 
   registry.queries.drawBoxes:eachRow(
-    function(i, entities, boxes, colors, positions)
+    function(i, boxes, colors, positions)
       love.graphics.setColor(colors[i].r, colors[i].g, colors[i].b, colors[i].a)
 
       love.graphics.rectangle(
@@ -27,14 +27,14 @@ function drawBoxes(registry)
 end
 
 function handleMouseMoved(registry, x, y, dx, dy, isTouch)
-  registry.queries.handleMouseMoved:eachRow(function(i, entities, positions)
+  registry.queries.handleMouseMoved:eachRow(function(i, positions)
     positions[i].y = y
   end)
 end
 
 function updateVelocityPositions(registry, dt)
   registry.queries.updateVelocityPositions:eachRow(
-    function(i, entities, positions, previousPositions, velocities)
+    function(i, positions, previousPositions, velocities)
       previousPositions[i] = positions[i]
 
       positions[i].x = positions[i].x + velocities[i].x * dt
@@ -45,7 +45,7 @@ end
 
 function updateWallCollisions(registry, dt)
   registry.queries.updateWallCollisions:eachRow(
-    function(i, entities, boxes, positions, velocities)
+    function(i, boxes, positions, velocities)
       if positions[i].y - 0.5 * boxes[i].y < 0 and velocities[i].y < 0 then
         velocities[i].y = -velocities[i].y
       elseif
@@ -69,12 +69,12 @@ end
 
 function updatePaddleCollisions(registry, dt)
   registry.queries.updatePaddleCollisions:eachRow(
-    function(i, entities, boxes, positions)
+    function(i, boxes, positions)
       local paddleBox = boxes[i]
       local paddlePosition = positions[i]
 
       registry.queries.updatePaddleBallCollisions:eachRow(
-        function(i, entities, boxes, colors, positions, previousPositions, velocities)
+        function(i, boxes, colors, positions, previousPositions, velocities)
           if
             positions[i].y - 0.5 * boxes[i].y
               < paddlePosition.y + 0.5 * paddleBox.y

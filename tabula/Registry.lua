@@ -15,7 +15,7 @@ local sortedKeys = assert(tableMod.sortedKeys)
 local M = Class.new()
 
 local function formatArchetype(archetype)
-  return "{ " .. table.concat(sortedKeys(archetype), ", ") .. " }"
+  return "{ " .. table.concat(archetype, ", ") .. " }"
 end
 
 function M:init()
@@ -40,20 +40,21 @@ function M:init()
   self.tablets = { self.rootTablet }
 end
 
-function M:addEntry(components)
-  local components = tableMod.copy(components)
+function M:addEntry(values)
+  local values = tableMod.copy(values)
 
-  components.entity = self.nextEntity
+  values.entity = self.nextEntity
   self.nextEntity = self.nextEntity + 1
 
-  local archetype = keySet(components)
-  archetype.entity = nil
+  local archetypeSet = keySet(values)
+  archetypeSet.entity = nil
+  local archetype = sortedKeys(archetypeSet)
 
   local tablet = self:addTablet(archetype)
 
-  local shard, index = tablet:addRow(components)
+  local shard, index = tablet:addRow(values)
   local entry = Entry.new(shard, index)
-  self.entries[components.entity] = entry
+  self.entries[values.entity] = entry
   return entry
 end
 
@@ -63,14 +64,14 @@ end
 
 function M:addTablet(archetype)
   local parentTablet = self.rootTablet
-  local sortedComponents = sortedKeys(archetype)
 
-  for i, component in ipairs(sortedComponents) do
+  for i, component in ipairs(archetype) do
     local childTablet = parentTablet.children[component]
 
     if not childTablet then
-      local childArchetype = tableMod.copy(parentTablet.archetype)
-      childArchetype[component] = true
+      local childArchetypeSet = tableMod.valueSet(parentTablet.archetype)
+      childArchetypeSet[component] = true
+      local childArchetype = sortedKeys(childArchetypeSet)
 
       print(
         "Adding tablet #"
