@@ -1,6 +1,6 @@
 local Class = require("tabula.Class")
 local CType = require("tabula.CType")
-local Entry = require("tabula.Entry")
+local Row = require("tabula.Row")
 local ffi = require("ffi")
 local tableMod = require("tabula.table")
 local Tablet = require("tabula.Tablet")
@@ -38,11 +38,11 @@ function M:init()
   self.tablets = { self.rootTablet }
 end
 
-function M:addEntry(values)
+function M:addRow(values)
   local values = tableMod.copy(values)
 
   if values.entity then
-    assert(not self.entries[entity], "Duplicate entry")
+    assert(not self.entries[entity], "Duplicate entity")
   else
     while self.entries[self.nextEntity] do
       self.nextEntity = self.nextEntity + 1
@@ -59,15 +59,15 @@ function M:addEntry(values)
   local tablet = self:addTablet(archetype)
 
   local shard, index = tablet:addRow(values)
-  local entry = Entry.new(shard, index)
-  self.entries[values.entity] = entry
-  return entry
+  local row = Row.new(shard, index)
+  self.entries[values.entity] = row
+  return row
 end
 
-function M:removeEntry(entity)
-  local entry = assert(self.entries[entity], "No such entry")
-  entry._shard.tablet:removeRow(entry._shard, entry._index)
-  Entry.invalidate(entry)
+function M:removeRow(entity)
+  local row = assert(self.entries[entity], "No such row")
+  row._shard.tablet:removeRow(row._shard, row._index)
+  Row.invalidate(row)
   self.entries[entity] = nil
 end
 

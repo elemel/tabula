@@ -7,18 +7,18 @@ local function formatArchetype(archetype)
   return "/" .. table.concat(archetype, "/")
 end
 
-function M:init(registry, archetype)
-  self.registry = assert(registry)
+function M:init(engine, archetype)
+  self.engine = assert(engine)
   self.archetype = tableMod.copy(archetype)
 
   self.columnTypes = {}
 
-  local entityTypeName = assert(self.registry.componentTypes.entity)
-  self.columnTypes.entity = assert(self.registry.dataTypes[entityTypeName])
+  local entityTypeName = assert(self.engine.componentTypes.entity)
+  self.columnTypes.entity = assert(self.engine.dataTypes[entityTypeName])
 
   for _, component in ipairs(self.archetype) do
-    local typeName = assert(self.registry.componentTypes[component])
-    self.columnTypes[component] = assert(self.registry.dataTypes[typeName])
+    local typeName = assert(self.engine.componentTypes[component])
+    self.columnTypes[component] = assert(self.engine.dataTypes[typeName])
   end
 
   self.shards = {}
