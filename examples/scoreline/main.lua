@@ -152,14 +152,14 @@ function love.load()
   engine.componentTypes.isPlayer = "tag"
   engine.componentTypes.isBall = "tag"
 
-  engine:addEntry({
+  engine:addRow({
     box = { 10, 50 },
     color = { 0.9, 0.3, 0.1, 1 },
     isPaddle = true,
     position = { 100, 300 },
   })
 
-  engine:addEntry({
+  engine:addRow({
     box = { 10, 50 },
     color = { 0, 0.5, 1, 1 },
     isPaddle = true,
@@ -167,19 +167,19 @@ function love.load()
     position = { 700, 300 },
   })
 
-  engine:addEntry({
+  engine:addRow({
     box = { 2, 600 },
     color = { 0.2, 0.8, 0, 1 },
     position = { 400, 300 },
   })
 
-  engine:addEntry({
+  engine:addRow({
     box = { 2, 600 },
     color = { 1, 0.3, 0.7, 1 },
     position = { 0, 300 },
   })
 
-  engine:addEntry({
+  engine:addRow({
     box = { 2, 600 },
     color = { 0.7, 0.3, 1, 1 },
     position = { 800, 300 },
@@ -210,7 +210,7 @@ function love.load()
 
     local a = love.math.randomNormal(0.1, 0.5)
 
-    engine:addEntry({
+    engine:addRow({
       box = { 2, 2 },
       color = { r, g, b, a },
       isBall = true,
