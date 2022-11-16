@@ -19,7 +19,7 @@ local function formatArchetype(archetype)
 end
 
 function M:init()
-  self.entries = {}
+  self.rows = {}
   self.nextEntity = 1
 
   self.dataTypes = {
@@ -42,9 +42,9 @@ function M:addRow(values)
   local values = tableMod.copy(values)
 
   if values.entity then
-    assert(not self.entries[entity], "Duplicate entity")
+    assert(not self.rows[entity], "Duplicate entity")
   else
-    while self.entries[self.nextEntity] do
+    while self.rows[self.nextEntity] do
       self.nextEntity = self.nextEntity + 1
     end
 
@@ -60,15 +60,15 @@ function M:addRow(values)
 
   local shard, index = tablet:addRow(values)
   local row = Row.new(shard, index)
-  self.entries[values.entity] = row
+  self.rows[values.entity] = row
   return row
 end
 
 function M:removeRow(entity)
-  local row = assert(self.entries[entity], "No such row")
+  local row = assert(self.rows[entity], "No such row")
   row._shard.tablet:removeRow(row._shard, row._index)
   Row.invalidate(row)
-  self.entries[entity] = nil
+  self.rows[entity] = nil
 end
 
 function M:addTablet(archetype)
