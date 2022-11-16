@@ -4,7 +4,7 @@ local tableMod = require("tabula.table")
 local M = Class.new()
 
 local function formatArchetype(archetype)
-  return "{ " .. table.concat(archetype, ", ") .. " }"
+  return "/" .. table.concat(archetype, "/")
 end
 
 function M:init(registry, archetype)

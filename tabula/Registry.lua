@@ -15,12 +15,10 @@ local sortedKeys = assert(tableMod.sortedKeys)
 local M = Class.new()
 
 local function formatArchetype(archetype)
-  return "{ " .. table.concat(archetype, ", ") .. " }"
+  return "/" .. table.concat(archetype, "/")
 end
 
 function M:init()
-  print("Adding tablet #1 for archetype { }")
-
   self.entries = {}
   self.nextEntity = 1
 
