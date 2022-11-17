@@ -1,11 +1,9 @@
 local M = {}
 
-M.Class = require("tabula.Class")
 M.CType = require("tabula.CType")
 M.Engine = require("tabula.Engine")
 M.Query = require("tabula.Query")
 M.Row = require("tabula.Row")
-M.table = require("tabula.table")
 M.TagType = require("tabula.TagType")
 M.ValueType = require("tabula.ValueType")
 
