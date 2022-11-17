@@ -1,8 +1,5 @@
-local CType = require("tabula.CType")
 local ffi = require("ffi")
-local Engine = require("tabula.Engine")
-local Query = require("tabula.Query")
-local ValueType = require("tabula.ValueType")
+local tabula = require("tabula")
 
 local abs = assert(math.abs)
 
@@ -155,7 +152,7 @@ end
 function love.load()
   love.mouse.setVisible(false)
 
-  engine = Engine.new()
+  engine = tabula.Engine.new()
 
   ffi.cdef([[
     typedef struct {
@@ -169,8 +166,8 @@ function love.load()
     } Color4
   ]])
 
-  engine.dataTypes.vec2 = CType.new("Vec2")
-  engine.dataTypes.color4 = CType.new("Color4")
+  engine.dataTypes.vec2 = tabula.CType.new("Vec2")
+  engine.dataTypes.color4 = tabula.CType.new("Color4")
 
   engine.componentTypes.position = "vec2"
   engine.componentTypes.previousPosition = "vec2"
@@ -260,27 +257,27 @@ function love.load()
   engine:addSystem("update", updateWallCollisions)
   engine:addSystem("update", updatePaddleCollisions)
 
-  engine.queries.drawBoxes = Query.new(engine, {
+  engine.queries.drawBoxes = tabula.Query.new(engine, {
     allOf = { "box", "color", "position" },
   })
 
-  engine.queries.handleMouseMoved = Query.new(engine, {
+  engine.queries.handleMouseMoved = tabula.Query.new(engine, {
     allOf = { "position", "isPaddle", "isPlayer" },
   })
 
-  engine.queries.updateVelocityPositions = Query.new(engine, {
+  engine.queries.updateVelocityPositions = tabula.Query.new(engine, {
     allOf = { "position", "previousPosition", "velocity" },
   })
 
-  engine.queries.updateWallCollisions = Query.new(engine, {
+  engine.queries.updateWallCollisions = tabula.Query.new(engine, {
     allOf = { "box", "position", "velocity", "isBall" },
   })
 
-  engine.queries.updatePaddleCollisions = Query.new(engine, {
+  engine.queries.updatePaddleCollisions = tabula.Query.new(engine, {
     allOf = { "box", "position", "isPaddle" },
   })
 
-  engine.queries.updatePaddleBallCollisions = Query.new(engine, {
+  engine.queries.updatePaddleBallCollisions = tabula.Query.new(engine, {
     allOf = {
       "box",
       "color",
