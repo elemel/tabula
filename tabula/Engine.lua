@@ -1,3 +1,4 @@
+local archetypeMod = require("tabula.archetype")
 local Class = require("tabula.Class")
 local CType = require("tabula.CType")
 local Row = require("tabula.Row")
@@ -13,10 +14,6 @@ local keySet = assert(tableMod.keySet)
 local sortedKeys = assert(tableMod.sortedKeys)
 
 local M = Class.new()
-
-local function formatArchetype(archetype)
-  return "/" .. table.concat(archetype, "/")
-end
 
 function M:init()
   self.rows = {}
@@ -34,8 +31,8 @@ function M:init()
   self.eventSystems = {}
   self.queries = {}
 
-  self.rootTablet = Tablet.new(self, {})
-  self.tablets = { self.rootTablet }
+  self.tablets = {}
+  self.tabletVersion = 1
 end
 
 function M:addRow(values)
@@ -52,10 +49,7 @@ function M:addRow(values)
     self.nextEntity = self.nextEntity + 1
   end
 
-  local archetypeSet = keySet(values)
-  archetypeSet.entity = nil
-  local archetype = sortedKeys(archetypeSet)
-
+  local archetype = archetypeMod.fromComponentSet(values)
   local tablet = self:addTablet(archetype)
 
   local shard, index = tablet:addRow(values)
@@ -72,35 +66,18 @@ function M:removeRow(entity)
 end
 
 function M:addTablet(archetype)
-  local parentTablet = self.rootTablet
+  local tablet = self.tablets[archetype]
 
-  for i, component in ipairs(archetype) do
-    local childTablet = parentTablet.children[component]
+  if not tablet then
+    print("Adding tablet for archetype " .. archetype)
 
-    if not childTablet then
-      local childArchetypeSet = tableMod.valueSet(parentTablet.archetype)
-      childArchetypeSet[component] = true
-      local childArchetype = sortedKeys(childArchetypeSet)
+    tablet = Tablet.new(self, archetype)
+    self.tablets[archetype] = tablet
 
-      print(
-        "Adding tablet #"
-          .. (#self.tablets + 1)
-          .. " for archetype "
-          .. formatArchetype(childArchetype)
-      )
-
-      childTablet = Tablet.new(self, childArchetype)
-
-      parentTablet.children[component] = childTablet
-      childTablet.parents[component] = parentTablet
-
-      table.insert(self.tablets, childTablet)
-    end
-
-    parentTablet = childTablet
+    self.tabletVersion = self.tabletVersion + 1
   end
 
-  return parentTablet
+  return tablet
 end
 
 function M:addEvent(event)

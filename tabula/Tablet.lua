@@ -1,22 +1,17 @@
+local archetypeMod = require("tabula.archetype")
 local Class = require("tabula.Class")
 local tableMod = require("tabula.table")
 
 local M = Class.new()
 
-local function formatArchetype(archetype)
-  return "/" .. table.concat(archetype, "/")
-end
-
 function M:init(engine, archetype)
   self.engine = assert(engine)
-  self.archetype = tableMod.copy(archetype)
+  self.archetype = assert(archetype)
 
+  local components = archetypeMod.toComponents(self.archetype)
   self.columnTypes = {}
 
-  local entityTypeName = assert(self.engine.componentTypes.entity)
-  self.columnTypes.entity = assert(self.engine.dataTypes[entityTypeName])
-
-  for _, component in ipairs(self.archetype) do
+  for _, component in ipairs(components) do
     local typeName = assert(self.engine.componentTypes[component])
     self.columnTypes[component] = assert(self.engine.dataTypes[typeName])
   end
@@ -33,10 +28,7 @@ function M:pushRow()
 
   if #shards == 0 or shards[#shards].size == self.shardCapacity then
     print(
-      "Adding shard #"
-        .. (#shards + 1)
-        .. " for archetype "
-        .. formatArchetype(self.archetype)
+      "Adding shard #" .. (#shards + 1) .. " for archetype " .. self.archetype
     )
 
     local shard = {
