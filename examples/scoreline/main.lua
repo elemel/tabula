@@ -1,9 +1,38 @@
-local colorMod = require("tabula.color")
 local CType = require("tabula.CType")
 local ffi = require("ffi")
 local Engine = require("tabula.Engine")
 local Query = require("tabula.Query")
 local ValueType = require("tabula.ValueType")
+
+local abs = assert(math.abs)
+
+-- See: http://love2d.org/wiki/HSL_color
+local function hslToRgb(h, s, l)
+  if s <= 0 then
+    return l, l, l
+  end
+
+  local h, s, l = h * 6, s, l
+  local c = (1 - abs(2 * l - 1)) * s
+  local x = (1 - abs(h % 2 - 1)) * c
+  local m, r, g, b = (l - 0.5 * c), 0, 0, 0
+
+  if h < 1 then
+    r, g, b = c, x, 0
+  elseif h < 2 then
+    r, g, b = x, c, 0
+  elseif h < 3 then
+    r, g, b = 0, c, x
+  elseif h < 4 then
+    r, g, b = 0, x, c
+  elseif h < 5 then
+    r, g, b = x, 0, c
+  else
+    r, g, b = c, 0, x
+  end
+
+  return r + m, g + m, b + m
+end
 
 function drawBoxes(engine)
   love.graphics.push("all")
@@ -206,7 +235,7 @@ function love.load()
     local s = love.math.randomNormal(0.1, 0.6)
     local l = love.math.randomNormal(0.1, 0.6)
 
-    local r, g, b = colorMod.hslToRgb(h, s, l)
+    local r, g, b = hslToRgb(h, s, l)
 
     local a = love.math.randomNormal(0.1, 0.5)
 
