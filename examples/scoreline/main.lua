@@ -1,9 +1,35 @@
-local colorMod = require("tabula.color")
-local CType = require("tabula.CType")
 local ffi = require("ffi")
-local Engine = require("tabula.Engine")
-local Query = require("tabula.Query")
-local ValueType = require("tabula.ValueType")
+local tabula = require("tabula")
+
+local abs = assert(math.abs)
+
+-- See: http://love2d.org/wiki/HSL_color
+local function hslToRgb(h, s, l)
+  if s <= 0 then
+    return l, l, l
+  end
+
+  local h, s, l = h * 6, s, l
+  local c = (1 - abs(2 * l - 1)) * s
+  local x = (1 - abs(h % 2 - 1)) * c
+  local m, r, g, b = (l - 0.5 * c), 0, 0, 0
+
+  if h < 1 then
+    r, g, b = c, x, 0
+  elseif h < 2 then
+    r, g, b = x, c, 0
+  elseif h < 3 then
+    r, g, b = 0, c, x
+  elseif h < 4 then
+    r, g, b = 0, x, c
+  elseif h < 5 then
+    r, g, b = x, 0, c
+  else
+    r, g, b = c, 0, x
+  end
+
+  return r + m, g + m, b + m
+end
 
 function drawBoxes(engine)
   love.graphics.push("all")
@@ -126,44 +152,45 @@ end
 function love.load()
   love.mouse.setVisible(false)
 
-  engine = Engine.new()
+  engine = tabula.Engine.new()
 
   ffi.cdef([[
-    typedef struct {
-      float x, y;
-    } Vec2
-  ]])
-
-  ffi.cdef([[
-    typedef struct {
+    typedef struct Color4 {
       float r, g, b, a;
-    } Color4
+    } Color4;
+
+    typedef struct Tag {} Tag;
+
+    typedef struct Vec2 {
+      float x, y;
+    } Vec2;
   ]])
 
-  engine.dataTypes.vec2 = CType.new("Vec2")
-  engine.dataTypes.color4 = CType.new("Color4")
+  engine:addType("color4", tabula.CType.new("Color4"))
+  engine:addType("tag", tabula.CType.new("Tag"))
+  engine:addType("vec2", tabula.CType.new("Vec2"))
 
-  engine.componentTypes.position = "vec2"
-  engine.componentTypes.previousPosition = "vec2"
-  engine.componentTypes.velocity = "vec2"
-  engine.componentTypes.box = "vec2"
-  engine.componentTypes.color = "color4"
-  engine.componentTypes.isPaddle = "tag"
-  engine.componentTypes.isPlayer = "tag"
-  engine.componentTypes.isBall = "tag"
+  engine:addColumn("position", "vec2")
+  engine:addColumn("previousPosition", "vec2")
+  engine:addColumn("velocity", "vec2")
+  engine:addColumn("box", "vec2")
+  engine:addColumn("color", "color4")
+  engine:addColumn("paddleTag", "tag")
+  engine:addColumn("playerTag", "tag")
+  engine:addColumn("ballTag", "tag")
 
   engine:addRow({
     box = { 10, 50 },
     color = { 0.9, 0.3, 0.1, 1 },
-    isPaddle = true,
+    paddleTag = {},
     position = { 100, 300 },
   })
 
   engine:addRow({
     box = { 10, 50 },
     color = { 0, 0.5, 1, 1 },
-    isPaddle = true,
-    isPlayer = true,
+    paddleTag = {},
+    playerTag = {},
     position = { 700, 300 },
   })
 
@@ -206,14 +233,14 @@ function love.load()
     local s = love.math.randomNormal(0.1, 0.6)
     local l = love.math.randomNormal(0.1, 0.6)
 
-    local r, g, b = colorMod.hslToRgb(h, s, l)
+    local r, g, b = hslToRgb(h, s, l)
 
     local a = love.math.randomNormal(0.1, 0.5)
 
     engine:addRow({
       box = { 2, 2 },
       color = { r, g, b, a },
-      isBall = true,
+      ballTag = {},
       previousPosition = { x, y },
       position = { x, y },
       velocity = { velocityX, velocityY },
@@ -231,34 +258,34 @@ function love.load()
   engine:addSystem("update", updateWallCollisions)
   engine:addSystem("update", updatePaddleCollisions)
 
-  engine.queries.drawBoxes = Query.new(engine, {
+  engine.queries.drawBoxes = tabula.Query.new(engine, {
     allOf = { "box", "color", "position" },
   })
 
-  engine.queries.handleMouseMoved = Query.new(engine, {
-    allOf = { "position", "isPaddle", "isPlayer" },
+  engine.queries.handleMouseMoved = tabula.Query.new(engine, {
+    allOf = { "position", "paddleTag", "playerTag" },
   })
 
-  engine.queries.updateVelocityPositions = Query.new(engine, {
+  engine.queries.updateVelocityPositions = tabula.Query.new(engine, {
     allOf = { "position", "previousPosition", "velocity" },
   })
 
-  engine.queries.updateWallCollisions = Query.new(engine, {
-    allOf = { "box", "position", "velocity", "isBall" },
+  engine.queries.updateWallCollisions = tabula.Query.new(engine, {
+    allOf = { "box", "position", "velocity", "ballTag" },
   })
 
-  engine.queries.updatePaddleCollisions = Query.new(engine, {
-    allOf = { "box", "position", "isPaddle" },
+  engine.queries.updatePaddleCollisions = tabula.Query.new(engine, {
+    allOf = { "box", "position", "paddleTag" },
   })
 
-  engine.queries.updatePaddleBallCollisions = Query.new(engine, {
+  engine.queries.updatePaddleBallCollisions = tabula.Query.new(engine, {
     allOf = {
       "box",
       "color",
       "position",
       "previousPosition",
       "velocity",
-      "isBall",
+      "ballTag",
     },
   })
 end

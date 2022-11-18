@@ -1,23 +1,18 @@
+local archetypeMod = require("tabula.archetype")
 local Class = require("tabula.Class")
 local tableMod = require("tabula.table")
 
 local M = Class.new()
 
-local function formatArchetype(archetype)
-  return "/" .. table.concat(archetype, "/")
-end
-
 function M:init(engine, archetype)
   self.engine = assert(engine)
-  self.archetype = tableMod.copy(archetype)
+  self.archetype = assert(archetype)
 
+  local components = archetypeMod.toComponents(self.archetype)
   self.columnTypes = {}
 
-  local entityTypeName = assert(self.engine.componentTypes.entity)
-  self.columnTypes.entity = assert(self.engine.dataTypes[entityTypeName])
-
-  for _, component in ipairs(self.archetype) do
-    local typeName = assert(self.engine.componentTypes[component])
+  for _, component in ipairs(components) do
+    local typeName = assert(self.engine.columnTypeNames[component])
     self.columnTypes[component] = assert(self.engine.dataTypes[typeName])
   end
 
@@ -28,15 +23,44 @@ function M:init(engine, archetype)
   self.children = {}
 end
 
+function M:addParent(component)
+  local parent = self.parents[component]
+
+  if parent == nil then
+    local components = archetypeMod.toComponents(self.archetype)
+    local componentSet = tableMod.valueSet(components)
+    assert(componentSet[component])
+    componentSet[component] = nil
+    local parentArchetype = archetypeMod.fromComponentSet(componentSet)
+    parent = self.engine:addTablet(parentArchetype)
+    self.parents[component] = parent
+  end
+
+  return parent
+end
+
+function M:addChild(component)
+  local child = self.children[component]
+
+  if child == nil then
+    local components = archetypeMod.toComponents(self.archetype)
+    local componentSet = tableMod.valueSet(components)
+    assert(not componentSet[component])
+    componentSet[component] = true
+    local childArchetype = archetypeMod.fromComponentSet(componentSet)
+    child = self.engine:addTablet(childArchetype)
+    self.children[component] = child
+  end
+
+  return child
+end
+
 function M:pushRow()
   local shards = self.shards
 
   if #shards == 0 or shards[#shards].size == self.shardCapacity then
     print(
-      "Adding shard #"
-        .. (#shards + 1)
-        .. " for archetype "
-        .. formatArchetype(self.archetype)
+      "Adding shard #" .. (#shards + 1) .. " for archetype " .. self.archetype
     )
 
     local shard = {
@@ -46,7 +70,7 @@ function M:pushRow()
     }
 
     for component, columnType in pairs(self.columnTypes) do
-      shard.columns[component] = columnType:allocateArray(self.shardCapacity)
+      shard.columns[component] = columnType:allocateColumn(self.shardCapacity)
     end
 
     table.insert(shards, shard)

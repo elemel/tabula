@@ -1,50 +1,57 @@
+local archetypeMod = require("tabula.archetype")
 local Class = require("tabula.Class")
 local CType = require("tabula.CType")
-local Row = require("tabula.Row")
+local rowMod = require("tabula.row")
 local ffi = require("ffi")
 local tableMod = require("tabula.table")
 local Tablet = require("tabula.Tablet")
-local TagType = require("tabula.TagType")
 local lton = require("lton")
 local ValueType = require("tabula.ValueType")
 
+local clear = assert(tableMod.clear)
 local keys = assert(tableMod.keys)
 local keySet = assert(tableMod.keySet)
 local sortedKeys = assert(tableMod.sortedKeys)
 
 local M = Class.new()
 
-local function formatArchetype(archetype)
-  return "/" .. table.concat(archetype, "/")
-end
-
 function M:init()
-  self.entries = {}
+  self.rows = {}
   self.nextEntity = 1
 
-  self.dataTypes = {
-    boolean = CType.new("bool"),
-    number = CType.new("double"),
-    tag = TagType.new(),
-    value = ValueType.new(),
-  }
+  self.dataTypes = {}
+  self.columnTypeNames = {}
 
-  self.componentTypes = { entity = "number" }
-  self.names = {}
   self.eventSystems = {}
   self.queries = {}
 
-  self.rootTablet = Tablet.new(self, {})
-  self.tablets = { self.rootTablet }
+  self.tablets = {}
+  self.tabletVersion = 1
+
+  self:addType("bool", CType.new("bool"))
+  self:addType("double", CType.new("double"))
+  self:addType("value", ValueType.new())
+
+  self:addColumn("entity", "double")
+end
+
+function M:addType(name, dataType)
+  assert(not self.dataTypes[name], "Duplicate type")
+  self.dataTypes[name] = dataType
+end
+
+function M:addColumn(component, typeName)
+  assert(not self.columnTypeNames[component], "Duplicate column")
+  self.columnTypeNames[component] = typeName
 end
 
 function M:addRow(values)
-  local values = tableMod.copy(values)
-
   if values.entity then
-    assert(not self.entries[entity], "Duplicate entity")
+    assert(not self.rows[entity], "Duplicate entity")
   else
-    while self.entries[self.nextEntity] do
+    values = tableMod.copy(values)
+
+    while self.rows[self.nextEntity] do
       self.nextEntity = self.nextEntity + 1
     end
 
@@ -52,55 +59,54 @@ function M:addRow(values)
     self.nextEntity = self.nextEntity + 1
   end
 
-  local archetypeSet = keySet(values)
-  archetypeSet.entity = nil
-  local archetype = sortedKeys(archetypeSet)
+  local row = {}
+  local columnValues = {}
 
+  for component, value in pairs(values) do
+    if self.columnTypeNames[component] then
+      columnValues[component] = value
+    else
+      row[component] = value
+    end
+  end
+
+  local archetype = archetypeMod.fromComponentSet(columnValues)
   local tablet = self:addTablet(archetype)
 
-  local shard, index = tablet:addRow(values)
-  local row = Row.new(shard, index)
-  self.entries[values.entity] = row
+  row._shard, row._index = tablet:addRow(columnValues)
+  setmetatable(row, rowMod.mt)
+  self.rows[values.entity] = row
   return row
 end
 
+function M:findRow(entity)
+  return self.rows[entity]
+end
+
 function M:removeRow(entity)
-  local row = assert(self.entries[entity], "No such row")
+  local row = assert(self.rows[entity], "No such row")
   row._shard.tablet:removeRow(row._shard, row._index)
-  Row.invalidate(row)
-  self.entries[entity] = nil
+
+  setmetatable(row, nil)
+  clear(row)
+  setmetatable(row, rowMod.invalidMt)
+
+  self.rows[entity] = nil
 end
 
 function M:addTablet(archetype)
-  local parentTablet = self.rootTablet
+  local tablet = self.tablets[archetype]
 
-  for i, component in ipairs(archetype) do
-    local childTablet = parentTablet.children[component]
+  if not tablet then
+    print("Adding tablet for archetype " .. archetype)
 
-    if not childTablet then
-      local childArchetypeSet = tableMod.valueSet(parentTablet.archetype)
-      childArchetypeSet[component] = true
-      local childArchetype = sortedKeys(childArchetypeSet)
+    tablet = Tablet.new(self, archetype)
+    self.tablets[archetype] = tablet
 
-      print(
-        "Adding tablet #"
-          .. (#self.tablets + 1)
-          .. " for archetype "
-          .. formatArchetype(childArchetype)
-      )
-
-      childTablet = Tablet.new(self, childArchetype)
-
-      parentTablet.children[component] = childTablet
-      childTablet.parents[component] = parentTablet
-
-      table.insert(self.tablets, childTablet)
-    end
-
-    parentTablet = childTablet
+    self.tabletVersion = self.tabletVersion + 1
   end
 
-  return parentTablet
+  return tablet
 end
 
 function M:addEvent(event)

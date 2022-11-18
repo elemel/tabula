@@ -10,7 +10,7 @@ function M:init(name)
   self.defaultValue = self.type()
 end
 
-function M:allocateArray(size)
+function M:allocateColumn(size)
   return self.vlaType(size)
 end
 

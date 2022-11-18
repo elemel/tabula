@@ -21,18 +21,18 @@ function M:init(engine, config)
   self.allOf = config.allOf or {}
   self.noneOf = config.noneOf or {}
 
-  self.tabletCount = 0
+  self.tabletVersion = 0
   self.tablets = {}
 end
 
 function M:updateTablets()
-  if self.tabletCount == #self.engine.tablets then
+  if self.tabletVersion == self.engine.tabletVersion then
     return
   end
 
   tableMod.clear(self.tablets)
 
-  for _, tablet in ipairs(self.engine.tablets) do
+  for _, tablet in pairs(self.engine.tablets) do
     local allOfCount = match(self.allOf, tablet.columnTypes)
     local noneOfCount = match(self.noneOf, tablet.columnTypes)
 
@@ -41,7 +41,7 @@ function M:updateTablets()
     end
   end
 
-  self.tabletCount = #self.engine.tablets
+  self.tabletVersion = self.engine.tabletVersion
 end
 
 function M:eachShard(callback)
