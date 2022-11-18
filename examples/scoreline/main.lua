@@ -155,41 +155,42 @@ function love.load()
   engine = tabula.Engine.new()
 
   ffi.cdef([[
-    typedef struct {
-      float x, y;
-    } Vec2
-  ]])
-
-  ffi.cdef([[
-    typedef struct {
+    typedef struct Color4 {
       float r, g, b, a;
-    } Color4
+    } Color4;
+
+    typedef struct Tag {} Tag;
+
+    typedef struct Vec2 {
+      float x, y;
+    } Vec2;
   ]])
 
-  engine.dataTypes.vec2 = tabula.CType.new("Vec2")
-  engine.dataTypes.color4 = tabula.CType.new("Color4")
+  engine:addType("color4", tabula.CType.new("Color4"))
+  engine:addType("tag", tabula.CType.new("Tag"))
+  engine:addType("vec2", tabula.CType.new("Vec2"))
 
-  engine.componentTypes.position = "vec2"
-  engine.componentTypes.previousPosition = "vec2"
-  engine.componentTypes.velocity = "vec2"
-  engine.componentTypes.box = "vec2"
-  engine.componentTypes.color = "color4"
-  engine.componentTypes.isPaddle = "tag"
-  engine.componentTypes.isPlayer = "tag"
-  engine.componentTypes.isBall = "tag"
+  engine:addColumn("position", "vec2")
+  engine:addColumn("previousPosition", "vec2")
+  engine:addColumn("velocity", "vec2")
+  engine:addColumn("box", "vec2")
+  engine:addColumn("color", "color4")
+  engine:addColumn("paddleTag", "tag")
+  engine:addColumn("playerTag", "tag")
+  engine:addColumn("ballTag", "tag")
 
   engine:addRow({
     box = { 10, 50 },
     color = { 0.9, 0.3, 0.1, 1 },
-    isPaddle = true,
+    paddleTag = {},
     position = { 100, 300 },
   })
 
   engine:addRow({
     box = { 10, 50 },
     color = { 0, 0.5, 1, 1 },
-    isPaddle = true,
-    isPlayer = true,
+    paddleTag = {},
+    playerTag = {},
     position = { 700, 300 },
   })
 
@@ -239,7 +240,7 @@ function love.load()
     engine:addRow({
       box = { 2, 2 },
       color = { r, g, b, a },
-      isBall = true,
+      ballTag = {},
       previousPosition = { x, y },
       position = { x, y },
       velocity = { velocityX, velocityY },
@@ -262,7 +263,7 @@ function love.load()
   })
 
   engine.queries.handleMouseMoved = tabula.Query.new(engine, {
-    allOf = { "position", "isPaddle", "isPlayer" },
+    allOf = { "position", "paddleTag", "playerTag" },
   })
 
   engine.queries.updateVelocityPositions = tabula.Query.new(engine, {
@@ -270,11 +271,11 @@ function love.load()
   })
 
   engine.queries.updateWallCollisions = tabula.Query.new(engine, {
-    allOf = { "box", "position", "velocity", "isBall" },
+    allOf = { "box", "position", "velocity", "ballTag" },
   })
 
   engine.queries.updatePaddleCollisions = tabula.Query.new(engine, {
-    allOf = { "box", "position", "isPaddle" },
+    allOf = { "box", "position", "paddleTag" },
   })
 
   engine.queries.updatePaddleBallCollisions = tabula.Query.new(engine, {
@@ -284,7 +285,7 @@ function love.load()
       "position",
       "previousPosition",
       "velocity",
-      "isBall",
+      "ballTag",
     },
   })
 end

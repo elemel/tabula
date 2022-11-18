@@ -5,7 +5,7 @@ local M = Class.new()
 
 function M:init() end
 
-function M:allocateArray(size)
+function M:allocateColumn(size)
   return {}
 end
 

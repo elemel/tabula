@@ -12,7 +12,7 @@ function M:init(engine, archetype)
   self.columnTypes = {}
 
   for _, component in ipairs(components) do
-    local typeName = assert(self.engine.componentTypes[component])
+    local typeName = assert(self.engine.columnTypeNames[component])
     self.columnTypes[component] = assert(self.engine.dataTypes[typeName])
   end
 
@@ -21,6 +21,38 @@ function M:init(engine, archetype)
 
   self.parents = {}
   self.children = {}
+end
+
+function M:addParent(component)
+  local parent = self.parents[component]
+
+  if parent == nil then
+    local components = archetypeMod.toComponents(self.archetype)
+    local componentSet = tableMod.valueSet(components)
+    assert(componentSet[component])
+    componentSet[component] = nil
+    local parentArchetype = archetypeMod.fromComponentSet(componentSet)
+    parent = self.engine:addTablet(parentArchetype)
+    self.parents[component] = parent
+  end
+
+  return parent
+end
+
+function M:addChild(component)
+  local child = self.children[component]
+
+  if child == nil then
+    local components = archetypeMod.toComponents(self.archetype)
+    local componentSet = tableMod.valueSet(components)
+    assert(not componentSet[component])
+    componentSet[component] = true
+    local childArchetype = archetypeMod.fromComponentSet(componentSet)
+    child = self.engine:addTablet(childArchetype)
+    self.children[component] = child
+  end
+
+  return child
 end
 
 function M:pushRow()
@@ -38,7 +70,7 @@ function M:pushRow()
     }
 
     for component, columnType in pairs(self.columnTypes) do
-      shard.columns[component] = columnType:allocateArray(self.shardCapacity)
+      shard.columns[component] = columnType:allocateColumn(self.shardCapacity)
     end
 
     table.insert(shards, shard)

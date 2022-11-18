@@ -1,6 +1,6 @@
 local M = {}
 
-local mt = {
+M.mt = {
   __index = function(row, component)
     local column = row._shard.columns[component]
     return column and column[row._index]
@@ -9,17 +9,40 @@ local mt = {
   __newindex = function(row, component, value)
     local column = row._shard.columns[component]
 
-    if column == nil and value ~= nil then
-      error("Not implemented")
-    elseif column ~= nil and value ~= nil then
+    if column ~= nil and value ~= nil then
       column[row._index] = value
+    elseif column == nil and value ~= nil then
+      local oldTablet = row._shard.tablet
+
+      if oldTablet.engine.columnTypes[component] then
+        local newTablet = oldTablet:addChild(component)
+        local newShard, newIndex = newTablet:pushRow()
+
+        newTablet:copyRow(newShard, newIndex, row._shard, row._index)
+        newshard.columns[component][newIndex] = value
+        oldTablet:removeRow(row._shard, row._index)
+
+        row._shard = newShard
+        row._index = newIndex
+      else
+        rawset(row, component, value)
+      end
     elseif column ~= nil and value == nil then
-      error("Not implemented")
+      local oldTablet = row._shard.tablet
+
+      local newTablet = oldTablet:addParent(component)
+      local newShard, newIndex = newTablet:pushRow()
+
+      newTablet:copyRow(newShard, newIndex, row._shard, row._index)
+      oldTablet:removeRow(row._shard, row._index)
+
+      row._shard = newShard
+      row._index = newIndex
     end
   end,
 }
 
-local invalidMt = {
+M.invalidMt = {
   __index = function(row, component)
     error("Invalid row")
   end,
@@ -28,18 +51,5 @@ local invalidMt = {
     error("Invalid row")
   end,
 }
-
-function M.new(shard, index)
-  local row = {
-    _shard = assert(shard),
-    _index = assert(index),
-  }
-
-  return setmetatable(row, mt)
-end
-
-function M.invalidate(row)
-  return setmetatable(row, invalidMt)
-end
 
 return M

@@ -3,6 +3,7 @@ local tableMod = require("tabula.table")
 local concat = assert(table.concat)
 local copy = assert(tableMod.copy)
 local gmatch = assert(string.gmatch)
+local insert = assert(table.insert)
 local keys = assert(tableMod.keys)
 local sort = assert(table.sort)
 
@@ -16,15 +17,13 @@ function M.toComponents(archetype, result)
   local cachedComponents = cachedComponentArrays[archetype]
 
   if not cachedComponents then
-    local componentSet = { entity = true }
+    cachedComponents = {}
 
     for component in gmatch(archetype, "%w+") do
-      componentSet[component] = true
+      insert(cachedComponents, component)
     end
 
-    cachedComponents = keys(componentSet)
     sort(cachedComponents)
-
     cachedComponentArrays[archetype] = cachedComponents
   end
 
@@ -32,12 +31,8 @@ function M.toComponents(archetype, result)
 end
 
 function M.fromComponentSet(componentSet)
-  componentSet = copy(componentSet)
-  componentSet.entity = nil
-
   local components = keys(componentSet)
   sort(components)
-
   return "/" .. concat(components, "/")
 end
 

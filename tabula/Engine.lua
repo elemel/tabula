@@ -1,14 +1,14 @@
 local archetypeMod = require("tabula.archetype")
 local Class = require("tabula.Class")
 local CType = require("tabula.CType")
-local Row = require("tabula.Row")
+local rowMod = require("tabula.row")
 local ffi = require("ffi")
 local tableMod = require("tabula.table")
 local Tablet = require("tabula.Tablet")
-local TagType = require("tabula.TagType")
 local lton = require("lton")
 local ValueType = require("tabula.ValueType")
 
+local clear = assert(tableMod.clear)
 local keys = assert(tableMod.keys)
 local keySet = assert(tableMod.keySet)
 local sortedKeys = assert(tableMod.sortedKeys)
@@ -19,28 +19,38 @@ function M:init()
   self.rows = {}
   self.nextEntity = 1
 
-  self.dataTypes = {
-    boolean = CType.new("bool"),
-    number = CType.new("double"),
-    tag = TagType.new(),
-    value = ValueType.new(),
-  }
+  self.dataTypes = {}
+  self.columnTypeNames = {}
 
-  self.componentTypes = { entity = "number" }
-  self.names = {}
   self.eventSystems = {}
   self.queries = {}
 
   self.tablets = {}
   self.tabletVersion = 1
+
+  self:addType("bool", CType.new("bool"))
+  self:addType("double", CType.new("double"))
+  self:addType("value", ValueType.new())
+
+  self:addColumn("entity", "double")
+end
+
+function M:addType(name, dataType)
+  assert(not self.dataTypes[name], "Duplicate type")
+  self.dataTypes[name] = dataType
+end
+
+function M:addColumn(component, typeName)
+  assert(not self.columnTypeNames[component], "Duplicate column")
+  self.columnTypeNames[component] = typeName
 end
 
 function M:addRow(values)
-  local values = tableMod.copy(values)
-
   if values.entity then
     assert(not self.rows[entity], "Duplicate entity")
   else
+    values = tableMod.copy(values)
+
     while self.rows[self.nextEntity] do
       self.nextEntity = self.nextEntity + 1
     end
@@ -49,19 +59,38 @@ function M:addRow(values)
     self.nextEntity = self.nextEntity + 1
   end
 
-  local archetype = archetypeMod.fromComponentSet(values)
+  local row = {}
+  local columnValues = {}
+
+  for component, value in pairs(values) do
+    if self.columnTypeNames[component] then
+      columnValues[component] = value
+    else
+      row[component] = value
+    end
+  end
+
+  local archetype = archetypeMod.fromComponentSet(columnValues)
   local tablet = self:addTablet(archetype)
 
-  local shard, index = tablet:addRow(values)
-  local row = Row.new(shard, index)
+  row._shard, row._index = tablet:addRow(columnValues)
+  setmetatable(row, rowMod.mt)
   self.rows[values.entity] = row
   return row
+end
+
+function M:findRow(entity)
+  return self.rows[entity]
 end
 
 function M:removeRow(entity)
   local row = assert(self.rows[entity], "No such row")
   row._shard.tablet:removeRow(row._shard, row._index)
-  Row.invalidate(row)
+
+  setmetatable(row, nil)
+  clear(row)
+  setmetatable(row, rowMod.invalidMt)
+
   self.rows[entity] = nil
 end
 
