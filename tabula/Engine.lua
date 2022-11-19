@@ -28,7 +28,6 @@ function M:init()
   self.tablets = {}
   self.tabletVersion = 1
 
-  self:addType("bool", CType.new("bool"))
   self:addType("double", CType.new("double"))
   self:addType("value", ValueType.new())
 
