@@ -152,7 +152,7 @@ end
 function love.load()
   love.mouse.setVisible(false)
 
-  engine = tabula.Engine.new()
+  engine = tabula.newEngine()
 
   ffi.cdef([[
     typedef struct Color4 {
@@ -166,9 +166,9 @@ function love.load()
     } Vec2;
   ]])
 
-  engine:addType("color4", tabula.CType.new("Color4"))
-  engine:addType("tag", tabula.CType.new("Tag"))
-  engine:addType("vec2", tabula.CType.new("Vec2"))
+  engine:addType("color4", tabula.newCType("Color4"))
+  engine:addType("tag", tabula.newCType("Tag"))
+  engine:addType("vec2", tabula.newCType("Vec2"))
 
   engine:addColumn("position", "vec2")
   engine:addColumn("previousPosition", "vec2")
@@ -258,27 +258,27 @@ function love.load()
   engine:addSystem("update", updateWallCollisions)
   engine:addSystem("update", updatePaddleCollisions)
 
-  engine.queries.drawBoxes = tabula.Query.new(engine, {
+  engine.queries.drawBoxes = tabula.newQuery(engine, {
     allOf = { "box", "color", "position" },
   })
 
-  engine.queries.handleMouseMoved = tabula.Query.new(engine, {
+  engine.queries.handleMouseMoved = tabula.newQuery(engine, {
     allOf = { "position", "paddleTag", "playerTag" },
   })
 
-  engine.queries.updateVelocityPositions = tabula.Query.new(engine, {
+  engine.queries.updateVelocityPositions = tabula.newQuery(engine, {
     allOf = { "position", "previousPosition", "velocity" },
   })
 
-  engine.queries.updateWallCollisions = tabula.Query.new(engine, {
+  engine.queries.updateWallCollisions = tabula.newQuery(engine, {
     allOf = { "box", "position", "velocity", "ballTag" },
   })
 
-  engine.queries.updatePaddleCollisions = tabula.Query.new(engine, {
+  engine.queries.updatePaddleCollisions = tabula.newQuery(engine, {
     allOf = { "box", "position", "paddleTag" },
   })
 
-  engine.queries.updatePaddleBallCollisions = tabula.Query.new(engine, {
+  engine.queries.updatePaddleBallCollisions = tabula.newQuery(engine, {
     allOf = {
       "box",
       "color",
