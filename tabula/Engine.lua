@@ -150,6 +150,7 @@ function M:eachRow(queryName, callback)
     error("No such query: " .. queryName)
   end
 
+  query:updateTablets(self)
   query:eachRow(callback)
 end
 
