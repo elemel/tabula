@@ -14,7 +14,7 @@ M.mt = {
     elseif column == nil and value ~= nil then
       local oldTablet = row._shard.tablet
 
-      if oldTablet.engine.columnTypes[component] then
+      if oldTablet.engine._columnTypes[component] then
         local newTablet = oldTablet:addChild(component)
         local newShard, newIndex = newTablet:pushRow()
 

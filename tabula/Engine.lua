@@ -16,17 +16,17 @@ local sortedKeys = assert(tableMod.sortedKeys)
 local M = Class.new()
 
 function M:init()
-  self.rows = {}
-  self.nextEntity = 1
+  self._rows = {}
+  self._nextEntity = 1
 
-  self.dataTypes = {}
-  self.columnTypeNames = {}
+  self._dataTypes = {}
+  self._columnTypeNames = {}
 
-  self.eventSystems = {}
-  self.queries = {}
+  self._eventSystems = {}
+  self._queries = {}
 
-  self.tablets = {}
-  self.tabletVersion = 1
+  self._tablets = {}
+  self._tabletVersion = 1
 
   self:addType("double", CType.new("double"))
   self:addType("value", ValueType.new())
@@ -35,13 +35,13 @@ function M:init()
 end
 
 function M:addType(name, dataType)
-  assert(not self.dataTypes[name], "Duplicate type")
-  self.dataTypes[name] = dataType
+  assert(not self._dataTypes[name], "Duplicate type")
+  self._dataTypes[name] = dataType
 end
 
 function M:addColumn(component, typeName)
-  assert(not self.columnTypeNames[component], "Duplicate column")
-  self.columnTypeNames[component] = typeName
+  assert(not self._columnTypeNames[component], "Duplicate column")
+  self._columnTypeNames[component] = typeName
 end
 
 function M:addRow(values)
@@ -50,19 +50,19 @@ function M:addRow(values)
   else
     values = tableMod.copy(values)
 
-    while self.rows[self.nextEntity] do
-      self.nextEntity = self.nextEntity + 1
+    while self._rows[self._nextEntity] do
+      self._nextEntity = self._nextEntity + 1
     end
 
-    values.entity = self.nextEntity
-    self.nextEntity = self.nextEntity + 1
+    values.entity = self._nextEntity
+    self._nextEntity = self._nextEntity + 1
   end
 
   local row = {}
   local columnValues = {}
 
   for component, value in pairs(values) do
-    if self.columnTypeNames[component] then
+    if self._columnTypeNames[component] then
       columnValues[component] = value
     else
       row[component] = value
@@ -74,16 +74,16 @@ function M:addRow(values)
 
   row._shard, row._index = tablet:addRow(columnValues)
   setmetatable(row, rowMod.mt)
-  self.rows[values.entity] = row
+  self._rows[values.entity] = row
   return row
 end
 
 function M:findRow(entity)
-  return self.rows[entity]
+  return self._rows[entity]
 end
 
 function M:removeRow(entity)
-  local row = assert(self.rows[entity], "No such row")
+  local row = assert(self._rows[entity], "No such row")
   row._shard.tablet:removeRow(row._shard, row._index)
 
   setmetatable(row, nil)
@@ -94,44 +94,44 @@ function M:removeRow(entity)
 end
 
 function M:addTablet(archetype)
-  local tablet = self.tablets[archetype]
+  local tablet = self._tablets[archetype]
 
   if not tablet then
     print("Adding tablet for archetype " .. archetype)
 
     tablet = Tablet.new(self, archetype)
-    self.tablets[archetype] = tablet
+    self._tablets[archetype] = tablet
 
-    self.tabletVersion = self.tabletVersion + 1
+    self._tabletVersion = self._tabletVersion + 1
   end
 
   return tablet
 end
 
 function M:addEvent(event)
-  if self.eventSystems[event] then
+  if self._eventSystems[event] then
     error("Duplicate event: " .. event)
   end
 
-  self.eventSystems[event] = {}
+  self._eventSystems[event] = {}
 end
 
 function M:addSystem(event, system)
-  if not self.eventSystems[event] then
+  if not self._eventSystems[event] then
     error("No such event: " .. event)
   end
 
   assert(type(system) == "function", "Invalid system")
-  table.insert(self.eventSystems[event], system)
+  table.insert(self._eventSystems[event], system)
 end
 
 function M:addQuery(name, query)
-  assert(not self.queries[name], "Duplicate query")
-  self.queries[name] = query
+  assert(not self._queries[name], "Duplicate query")
+  self._queries[name] = query
 end
 
 function M:handleEvent(event, ...)
-  local systems = self.eventSystems[event]
+  local systems = self._eventSystems[event]
 
   if not systems then
     error("No such event: " .. event)
@@ -143,7 +143,7 @@ function M:handleEvent(event, ...)
 end
 
 function M:eachRow(queryName, callback)
-  local query = assert(self.queries[queryName], "No such query")
+  local query = assert(self._queries[queryName], "No such query")
   query:eachRow(callback)
 end
 

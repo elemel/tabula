@@ -12,8 +12,8 @@ function M:init(engine, archetype)
   self.columnTypes = {}
 
   for _, component in ipairs(components) do
-    local typeName = assert(self.engine.columnTypeNames[component])
-    self.columnTypes[component] = assert(self.engine.dataTypes[typeName])
+    local typeName = assert(self.engine._columnTypeNames[component])
+    self.columnTypes[component] = assert(self.engine._dataTypes[typeName])
   end
 
   self.shards = {}
