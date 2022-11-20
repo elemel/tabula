@@ -12,8 +12,19 @@ function M:init(engine, archetype)
   self.columnTypes = {}
 
   for _, component in ipairs(components) do
-    local typeName = assert(self.engine._columnTypeNames[component])
-    self.columnTypes[component] = assert(self.engine._dataTypes[typeName])
+    local typeName = self.engine._columnTypeNames[component]
+
+    if not typeName then
+      error("No such column: " .. component)
+    end
+
+    local columnType = self.engine._dataTypes[typeName]
+
+    if not columnType then
+      error("No such type: " .. typeName)
+    end
+
+    self.columnTypes[component] = columnType
   end
 
   self.shards = {}
@@ -60,7 +71,7 @@ function M:pushRow()
 
   if #shards == 0 or shards[#shards].size == self.shardCapacity then
     print(
-      "Adding shard #" .. (#shards + 1) .. " for archetype " .. self.archetype
+      "Adding shard #" .. (#shards + 1) .. " for archetype: " .. self.archetype
     )
 
     local shard = {

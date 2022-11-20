@@ -27,26 +27,29 @@ function M:init()
 
   self._tablets = {}
   self._tabletVersion = 1
-
-  self:addType("double", CType.new("double"))
-  self:addType("value", ValueType.new())
-
-  self:addColumn("entity", "double")
 end
 
 function M:addType(name, dataType)
-  assert(not self._dataTypes[name], "Duplicate type")
+  if self._dataTypes[name] then
+    error("Duplicate type: " .. name)
+  end
+
   self._dataTypes[name] = dataType
 end
 
 function M:addColumn(component, typeName)
-  assert(not self._columnTypeNames[component], "Duplicate column")
+  if self._columnTypeNames[component] then
+    error("Duplicate column: " .. component)
+  end
+
   self._columnTypeNames[component] = typeName
 end
 
 function M:addRow(values)
   if values.entity then
-    assert(not self.rows[entity], "Duplicate entity")
+    if self.rows[entity] then
+      error("Duplicate row: " .. entity)
+    end
   else
     values = tableMod.copy(values)
 
@@ -58,21 +61,11 @@ function M:addRow(values)
     self._nextEntity = self._nextEntity + 1
   end
 
-  local row = {}
-  local columnValues = {}
-
-  for component, value in pairs(values) do
-    if self._columnTypeNames[component] then
-      columnValues[component] = value
-    else
-      row[component] = value
-    end
-  end
-
-  local archetype = archetypeMod.fromComponentSet(columnValues)
+  local archetype = archetypeMod.fromComponentSet(values)
   local tablet = self:addTablet(archetype)
 
-  row._shard, row._index = tablet:addRow(columnValues)
+  local row = {}
+  row._shard, row._index = tablet:addRow(values)
   setmetatable(row, rowMod.mt)
   self._rows[values.entity] = row
   return row
@@ -83,7 +76,12 @@ function M:findRow(entity)
 end
 
 function M:removeRow(entity)
-  local row = assert(self._rows[entity], "No such row")
+  local row = self._rows[entity]
+
+  if not row then
+    error("No such row: " .. entity)
+  end
+
   row._shard.tablet:removeRow(row._shard, row._index)
 
   setmetatable(row, nil)
@@ -97,7 +95,7 @@ function M:addTablet(archetype)
   local tablet = self._tablets[archetype]
 
   if not tablet then
-    print("Adding tablet for archetype " .. archetype)
+    print("Adding tablet for archetype: " .. archetype)
 
     tablet = Tablet.new(self, archetype)
     self._tablets[archetype] = tablet
@@ -126,7 +124,10 @@ function M:addSystem(event, system)
 end
 
 function M:addQuery(name, query)
-  assert(not self._queries[name], "Duplicate query")
+  if self._queries[name] then
+    error("Duplicate query: " .. name)
+  end
+
   self._queries[name] = query
 end
 
@@ -143,7 +144,12 @@ function M:handleEvent(event, ...)
 end
 
 function M:eachRow(queryName, callback)
-  local query = assert(self._queries[queryName], "No such query")
+  local query = self._queries[queryName]
+
+  if not query then
+    error("No such query: " .. queryName)
+  end
+
   query:eachRow(callback)
 end
 

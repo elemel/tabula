@@ -169,10 +169,12 @@ function love.load()
     } vec2;
   ]])
 
+  engine:addType("double", tabula.newCType("double"))
   engine:addType("color4", tabula.newCType("color4"))
   engine:addType("tag", tabula.newCType("tag"))
   engine:addType("vec2", tabula.newCType("vec2"))
 
+  engine:addColumn("entity", "double")
   engine:addColumn("position", "vec2")
   engine:addColumn("previousPosition", "vec2")
   engine:addColumn("velocity", "vec2")
