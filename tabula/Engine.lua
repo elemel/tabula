@@ -125,6 +125,11 @@ function M:addSystem(event, system)
   table.insert(self.eventSystems[event], system)
 end
 
+function M:addQuery(name, query)
+  assert(not self.queries[name], "Duplicate query")
+  self.queries[name] = query
+end
+
 function M:handleEvent(event, ...)
   local systems = self.eventSystems[event]
 
