@@ -128,6 +128,18 @@ function M:addQuery(name, query)
     error("Duplicate query: " .. name)
   end
 
+  for _, component in ipairs(query.includes) do
+    if not self._columnTypeNames[component] then
+      error("No such column: " .. component)
+    end
+  end
+
+  for _, component in ipairs(query.excludes) do
+    if not self._columnTypeNames[component] then
+      error("No such column: " .. component)
+    end
+  end
+
   self._queries[name] = query
 end
 

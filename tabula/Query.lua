@@ -1,17 +1,8 @@
 local Class = require("tabula.Class")
 local tableMod = require("tabula.table")
 
-local function match(pattern, columnTypes)
-  local result = 0
-
-  for _, component in ipairs(pattern) do
-    if columnTypes[component] then
-      result = result + 1
-    end
-  end
-
-  return result
-end
+local clear = assert(tableMod.clear)
+local insert = assert(table.insert)
 
 local M = Class.new()
 
@@ -25,7 +16,7 @@ end
 
 function M:updateTablets(engine)
   if self.tabletVersion ~= engine._tabletVersion then
-    tableMod.clear(self.tablets)
+    clear(self.tablets)
 
     for _, tablet in pairs(engine._tablets) do
       local included = true
