@@ -137,4 +137,9 @@ function M:handleEvent(event, ...)
   end
 end
 
+function M:eachRow(queryName, callback)
+  local query = assert(self.queries[queryName], "No such query")
+  query:eachRow(callback)
+end
+
 return M
