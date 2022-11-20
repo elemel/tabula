@@ -16,74 +16,72 @@ local sortedKeys = assert(tableMod.sortedKeys)
 local M = Class.new()
 
 function M:init()
-  self.rows = {}
-  self.nextEntity = 1
+  self._rows = {}
+  self._nextEntity = 1
 
-  self.dataTypes = {}
-  self.columnTypeNames = {}
+  self._dataTypes = {}
+  self._columnTypeNames = {}
 
-  self.eventSystems = {}
-  self.queries = {}
+  self._eventSystems = {}
+  self._queries = {}
 
-  self.tablets = {}
-  self.tabletVersion = 1
-
-  self:addType("double", CType.new("double"))
-  self:addType("value", ValueType.new())
-
-  self:addColumn("entity", "double")
+  self._tablets = {}
+  self._tabletVersion = 1
 end
 
 function M:addType(name, dataType)
-  assert(not self.dataTypes[name], "Duplicate type")
-  self.dataTypes[name] = dataType
+  if self._dataTypes[name] then
+    error("Duplicate type: " .. name)
+  end
+
+  self._dataTypes[name] = dataType
 end
 
 function M:addColumn(component, typeName)
-  assert(not self.columnTypeNames[component], "Duplicate column")
-  self.columnTypeNames[component] = typeName
+  if self._columnTypeNames[component] then
+    error("Duplicate column: " .. component)
+  end
+
+  self._columnTypeNames[component] = typeName
 end
 
 function M:addRow(values)
   if values.entity then
-    assert(not self.rows[entity], "Duplicate entity")
+    if self.rows[entity] then
+      error("Duplicate row: " .. entity)
+    end
   else
     values = tableMod.copy(values)
 
-    while self.rows[self.nextEntity] do
-      self.nextEntity = self.nextEntity + 1
+    while self._rows[self._nextEntity] do
+      self._nextEntity = self._nextEntity + 1
     end
 
-    values.entity = self.nextEntity
-    self.nextEntity = self.nextEntity + 1
+    values.entity = self._nextEntity
+    self._nextEntity = self._nextEntity + 1
   end
 
-  local row = {}
-  local columnValues = {}
-
-  for component, value in pairs(values) do
-    if self.columnTypeNames[component] then
-      columnValues[component] = value
-    else
-      row[component] = value
-    end
-  end
-
-  local archetype = archetypeMod.fromComponentSet(columnValues)
+  local archetype = archetypeMod.fromComponentSet(values)
   local tablet = self:addTablet(archetype)
 
-  row._shard, row._index = tablet:addRow(columnValues)
+  local row = {}
+  row._shard, row._index = tablet:addRow(values)
   setmetatable(row, rowMod.mt)
-  self.rows[values.entity] = row
+  self._rows[values.entity] = row
   return row
 end
 
 function M:findRow(entity)
-  return self.rows[entity]
+  return self._rows[entity]
 end
 
 function M:removeRow(entity)
-  local row = assert(self.rows[entity], "No such row")
+  local row = self._rows[entity]
+
+  if not row then
+    error("No such row: " .. entity)
+  end
+
   row._shard.tablet:removeRow(row._shard, row._index)
 
   setmetatable(row, nil)
@@ -94,39 +92,47 @@ function M:removeRow(entity)
 end
 
 function M:addTablet(archetype)
-  local tablet = self.tablets[archetype]
+  local tablet = self._tablets[archetype]
 
   if not tablet then
-    print("Adding tablet for archetype " .. archetype)
+    print("Adding tablet for archetype: " .. archetype)
 
     tablet = Tablet.new(self, archetype)
-    self.tablets[archetype] = tablet
+    self._tablets[archetype] = tablet
 
-    self.tabletVersion = self.tabletVersion + 1
+    self._tabletVersion = self._tabletVersion + 1
   end
 
   return tablet
 end
 
 function M:addEvent(event)
-  if self.eventSystems[event] then
+  if self._eventSystems[event] then
     error("Duplicate event: " .. event)
   end
 
-  self.eventSystems[event] = {}
+  self._eventSystems[event] = {}
 end
 
 function M:addSystem(event, system)
-  if not self.eventSystems[event] then
+  if not self._eventSystems[event] then
     error("No such event: " .. event)
   end
 
   assert(type(system) == "function", "Invalid system")
-  table.insert(self.eventSystems[event], system)
+  table.insert(self._eventSystems[event], system)
+end
+
+function M:addQuery(name, query)
+  if self._queries[name] then
+    error("Duplicate query: " .. name)
+  end
+
+  self._queries[name] = query
 end
 
 function M:handleEvent(event, ...)
-  local systems = self.eventSystems[event]
+  local systems = self._eventSystems[event]
 
   if not systems then
     error("No such event: " .. event)
@@ -135,6 +141,16 @@ function M:handleEvent(event, ...)
   for _, system in ipairs(systems) do
     system(self, ...)
   end
+end
+
+function M:eachRow(queryName, callback)
+  local query = self._queries[queryName]
+
+  if not query then
+    error("No such query: " .. queryName)
+  end
+
+  query:eachRow(callback)
 end
 
 return M

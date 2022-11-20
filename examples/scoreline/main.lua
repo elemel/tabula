@@ -35,7 +35,7 @@ function drawBoxes(engine)
   love.graphics.push("all")
   love.graphics.setBlendMode("add")
 
-  engine.queries.drawBoxes:eachRow(function(i, boxes, colors, positions)
+  engine:eachRow("drawBoxes", function(i, boxes, colors, positions)
     love.graphics.setColor(colors[i].r, colors[i].g, colors[i].b, colors[i].a)
 
     love.graphics.rectangle(
@@ -51,13 +51,14 @@ function drawBoxes(engine)
 end
 
 function handleMouseMoved(engine, x, y, dx, dy, isTouch)
-  engine.queries.handleMouseMoved:eachRow(function(i, positions)
+  engine:eachRow("handleMouseMoved", function(i, positions)
     positions[i].y = y
   end)
 end
 
 function updateVelocityPositions(engine, dt)
-  engine.queries.updateVelocityPositions:eachRow(
+  engine:eachRow(
+    "updateVelocityPositions",
     function(i, positions, previousPositions, velocities)
       previousPositions[i] = positions[i]
 
@@ -68,7 +69,8 @@ function updateVelocityPositions(engine, dt)
 end
 
 function updateWallCollisions(engine, dt)
-  engine.queries.updateWallCollisions:eachRow(
+  engine:eachRow(
+    "updateWallCollisions",
     function(i, boxes, positions, velocities)
       if positions[i].y - 0.5 * boxes[i].y < 0 and velocities[i].y < 0 then
         velocities[i].y = -velocities[i].y
@@ -92,11 +94,12 @@ function updateWallCollisions(engine, dt)
 end
 
 function updatePaddleCollisions(engine, dt)
-  engine.queries.updatePaddleCollisions:eachRow(function(i, boxes, positions)
+  engine:eachRow("updatePaddleCollisions", function(i, boxes, positions)
     local paddleBox = boxes[i]
     local paddlePosition = positions[i]
 
-    engine.queries.updatePaddleBallCollisions:eachRow(
+    engine:eachRow(
+      "updatePaddleBallCollisions",
       function(i, boxes, colors, positions, previousPositions, velocities)
         if
           positions[i].y - 0.5 * boxes[i].y
@@ -155,21 +158,23 @@ function love.load()
   engine = tabula.newEngine()
 
   ffi.cdef([[
-    typedef struct Color4 {
+    typedef struct color4 {
       float r, g, b, a;
-    } Color4;
+    } color4;
 
-    typedef struct Tag {} Tag;
+    typedef struct tag {} tag;
 
-    typedef struct Vec2 {
+    typedef struct vec2 {
       float x, y;
-    } Vec2;
+    } vec2;
   ]])
 
-  engine:addType("color4", tabula.newCType("Color4"))
-  engine:addType("tag", tabula.newCType("Tag"))
-  engine:addType("vec2", tabula.newCType("Vec2"))
+  engine:addType("double", tabula.newCType("double"))
+  engine:addType("color4", tabula.newCType("color4"))
+  engine:addType("tag", tabula.newCType("tag"))
+  engine:addType("vec2", tabula.newCType("vec2"))
 
+  engine:addColumn("entity", "double")
   engine:addColumn("position", "vec2")
   engine:addColumn("previousPosition", "vec2")
   engine:addColumn("velocity", "vec2")
@@ -258,27 +263,27 @@ function love.load()
   engine:addSystem("update", updateWallCollisions)
   engine:addSystem("update", updatePaddleCollisions)
 
-  engine.queries.drawBoxes = tabula.newQuery(engine, {
+  engine:addQuery("drawBoxes", tabula.newQuery(engine, {
     allOf = { "box", "color", "position" },
-  })
+  }))
 
-  engine.queries.handleMouseMoved = tabula.newQuery(engine, {
+  engine:addQuery("handleMouseMoved", tabula.newQuery(engine, {
     allOf = { "position", "paddleTag", "playerTag" },
-  })
+  }))
 
-  engine.queries.updateVelocityPositions = tabula.newQuery(engine, {
+  engine:addQuery("updateVelocityPositions", tabula.newQuery(engine, {
     allOf = { "position", "previousPosition", "velocity" },
-  })
+  }))
 
-  engine.queries.updateWallCollisions = tabula.newQuery(engine, {
+  engine:addQuery("updateWallCollisions", tabula.newQuery(engine, {
     allOf = { "box", "position", "velocity", "ballTag" },
-  })
+  }))
 
-  engine.queries.updatePaddleCollisions = tabula.newQuery(engine, {
+  engine:addQuery("updatePaddleCollisions", tabula.newQuery(engine, {
     allOf = { "box", "position", "paddleTag" },
-  })
+  }))
 
-  engine.queries.updatePaddleBallCollisions = tabula.newQuery(engine, {
+  engine:addQuery("updatePaddleBallCollisions", tabula.newQuery(engine, {
     allOf = {
       "box",
       "color",
@@ -287,7 +292,7 @@ function love.load()
       "velocity",
       "ballTag",
     },
-  })
+  }))
 end
 
 function love.draw(...)

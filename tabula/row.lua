@@ -13,20 +13,15 @@ M.mt = {
       column[row._index] = value
     elseif column == nil and value ~= nil then
       local oldTablet = row._shard.tablet
+      local newTablet = oldTablet:addChild(component)
+      local newShard, newIndex = newTablet:pushRow()
 
-      if oldTablet.engine.columnTypes[component] then
-        local newTablet = oldTablet:addChild(component)
-        local newShard, newIndex = newTablet:pushRow()
+      newTablet:copyRow(newShard, newIndex, row._shard, row._index)
+      newshard.columns[component][newIndex] = value
+      oldTablet:removeRow(row._shard, row._index)
 
-        newTablet:copyRow(newShard, newIndex, row._shard, row._index)
-        newshard.columns[component][newIndex] = value
-        oldTablet:removeRow(row._shard, row._index)
-
-        row._shard = newShard
-        row._index = newIndex
-      else
-        rawset(row, component, value)
-      end
+      row._shard = newShard
+      row._index = newIndex
     elseif column ~= nil and value == nil then
       local oldTablet = row._shard.tablet
 
