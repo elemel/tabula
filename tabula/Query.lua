@@ -1,60 +1,64 @@
 local Class = require("tabula.Class")
 local tableMod = require("tabula.table")
 
-local function match(pattern, columnTypes)
-  local result = 0
-
-  for _, component in ipairs(pattern) do
-    if columnTypes[component] then
-      result = result + 1
-    end
-  end
-
-  return result
-end
+local clear = assert(tableMod.clear)
+local insert = assert(table.insert)
 
 local M = Class.new()
 
-function M:init(engine, config)
-  self.engine = assert(engine)
-  config = config or {}
-  self.allOf = config.allOf or {}
-  self.noneOf = config.noneOf or {}
+function M:init(includes, excludes)
+  self.includes = tableMod.copy(includes or {})
+  self.excludes = tableMod.copy(excludes or {})
 
   self.tabletVersion = 0
   self.tablets = {}
 end
 
-function M:updateTablets()
-  if self.tabletVersion == self.engine._tabletVersion then
-    return
-  end
+function M:updateTablets(engine)
+  if self.tabletVersion ~= engine._tabletVersion then
+    clear(self.tablets)
 
-  tableMod.clear(self.tablets)
+    for _, tablet in pairs(engine._tablets) do
+      local included = true
 
-  for _, tablet in pairs(self.engine._tablets) do
-    local allOfCount = match(self.allOf, tablet.columnTypes)
-    local noneOfCount = match(self.noneOf, tablet.columnTypes)
+      for _, component in pairs(self.includes) do
+        if not tablet.columnTypes[component] then
+          included = false
+          break
+        end
+      end
 
-    if allOfCount == #self.allOf and noneOfCount == 0 then
-      table.insert(self.tablets, tablet)
+      for _, component in pairs(self.excludes) do
+        if tablet.columnTypes[component] then
+          included = false
+          break
+        end
+      end
+
+      if included then
+        table.insert(self.tablets, tablet)
+      end
     end
-  end
 
-  self.tabletVersion = self.engine._tabletVersion
+    self.tabletVersion = engine._tabletVersion
+  end
 end
 
 function M:eachShard(callback)
-  self:updateTablets()
-
-  if #self.allOf == 0 then
+  if #self.includes == 0 then
     self:eachShard0(callback)
-  elseif #self.allOf == 1 then
+  elseif #self.includes == 1 then
     self:eachShard1(callback)
-  elseif #self.allOf == 2 then
+  elseif #self.includes == 2 then
     self:eachShard2(callback)
-  elseif #self.allOf == 3 then
+  elseif #self.includes == 3 then
     self:eachShard3(callback)
+  elseif #self.includes == 4 then
+    self:eachShard4(callback)
+  elseif #self.includes == 5 then
+    self:eachShard5(callback)
+  elseif #self.includes == 6 then
+    self:eachShard6(callback)
   else
     error("Too many components")
   end
@@ -70,7 +74,7 @@ function M:eachShard0(callback)
 end
 
 function M:eachShard1(callback)
-  local component1 = self.allOf[1]
+  local component1 = self.includes[1]
 
   for _, tablet in ipairs(self.tablets) do
     for i = #tablet.shards, 1, -1 do
@@ -81,8 +85,8 @@ function M:eachShard1(callback)
 end
 
 function M:eachShard2(callback)
-  local component1 = self.allOf[1]
-  local component2 = self.allOf[2]
+  local component1 = self.includes[1]
+  local component2 = self.includes[2]
 
   for _, tablet in ipairs(self.tablets) do
     for i = #tablet.shards, 1, -1 do
@@ -94,9 +98,9 @@ function M:eachShard2(callback)
 end
 
 function M:eachShard3(callback)
-  local component1 = self.allOf[1]
-  local component2 = self.allOf[2]
-  local component3 = self.allOf[3]
+  local component1 = self.includes[1]
+  local component2 = self.includes[2]
+  local component3 = self.includes[3]
 
   for _, tablet in ipairs(self.tablets) do
     for i = #tablet.shards, 1, -1 do
@@ -112,22 +116,89 @@ function M:eachShard3(callback)
   end
 end
 
-function M:eachRow(callback)
-  self:updateTablets()
+function M:eachShard4(callback)
+  local component1 = self.includes[1]
+  local component2 = self.includes[2]
+  local component3 = self.includes[3]
+  local component4 = self.includes[4]
 
-  if #self.allOf == 0 then
+  for _, tablet in ipairs(self.tablets) do
+    for i = #tablet.shards, 1, -1 do
+      local shard = tablet.shards[i]
+
+      callback(
+        shard.size,
+        shard.columns[component1],
+        shard.columns[component2],
+        shard.columns[component3],
+        shard.columns[component4]
+      )
+    end
+  end
+end
+
+function M:eachShard5(callback)
+  local component1 = self.includes[1]
+  local component2 = self.includes[2]
+  local component3 = self.includes[3]
+  local component4 = self.includes[4]
+  local component5 = self.includes[5]
+
+  for _, tablet in ipairs(self.tablets) do
+    for i = #tablet.shards, 1, -1 do
+      local shard = tablet.shards[i]
+
+      callback(
+        shard.size,
+        shard.columns[component1],
+        shard.columns[component2],
+        shard.columns[component3],
+        shard.columns[component4],
+        shard.columns[component5]
+      )
+    end
+  end
+end
+
+function M:eachShard6(callback)
+  local component1 = self.includes[1]
+  local component2 = self.includes[2]
+  local component3 = self.includes[3]
+  local component4 = self.includes[4]
+  local component5 = self.includes[5]
+  local component6 = self.includes[6]
+
+  for _, tablet in ipairs(self.tablets) do
+    for i = #tablet.shards, 1, -1 do
+      local shard = tablet.shards[i]
+
+      callback(
+        shard.size,
+        shard.columns[component1],
+        shard.columns[component2],
+        shard.columns[component3],
+        shard.columns[component4],
+        shard.columns[component5],
+        shard.columns[component6]
+      )
+    end
+  end
+end
+
+function M:eachRow(callback)
+  if #self.includes == 0 then
     self:eachRow0(callback)
-  elseif #self.allOf == 1 then
+  elseif #self.includes == 1 then
     self:eachRow1(callback)
-  elseif #self.allOf == 2 then
+  elseif #self.includes == 2 then
     self:eachRow2(callback)
-  elseif #self.allOf == 3 then
+  elseif #self.includes == 3 then
     self:eachRow3(callback)
-  elseif #self.allOf == 4 then
+  elseif #self.includes == 4 then
     self:eachRow4(callback)
-  elseif #self.allOf == 5 then
+  elseif #self.includes == 5 then
     self:eachRow5(callback)
-  elseif #self.allOf == 6 then
+  elseif #self.includes == 6 then
     self:eachRow6(callback)
   else
     error("Too many components")
@@ -147,7 +218,7 @@ function M:eachRow0(callback)
 end
 
 function M:eachRow1(callback)
-  local component1 = self.allOf[1]
+  local component1 = self.includes[1]
 
   for _, tablet in ipairs(self.tablets) do
     for i = #tablet.shards, 1, -1 do
@@ -162,8 +233,8 @@ function M:eachRow1(callback)
 end
 
 function M:eachRow2(callback)
-  local component1 = self.allOf[1]
-  local component2 = self.allOf[2]
+  local component1 = self.includes[1]
+  local component2 = self.includes[2]
 
   for _, tablet in ipairs(self.tablets) do
     for i = #tablet.shards, 1, -1 do
@@ -180,9 +251,9 @@ function M:eachRow2(callback)
 end
 
 function M:eachRow3(callback)
-  local component1 = self.allOf[1]
-  local component2 = self.allOf[2]
-  local component3 = self.allOf[3]
+  local component1 = self.includes[1]
+  local component2 = self.includes[2]
+  local component3 = self.includes[3]
 
   for _, tablet in ipairs(self.tablets) do
     for i = #tablet.shards, 1, -1 do
@@ -200,10 +271,10 @@ function M:eachRow3(callback)
 end
 
 function M:eachRow4(callback)
-  local component1 = self.allOf[1]
-  local component2 = self.allOf[2]
-  local component3 = self.allOf[3]
-  local component4 = self.allOf[4]
+  local component1 = self.includes[1]
+  local component2 = self.includes[2]
+  local component3 = self.includes[3]
+  local component4 = self.includes[4]
 
   for _, tablet in ipairs(self.tablets) do
     for i = #tablet.shards, 1, -1 do
@@ -222,11 +293,11 @@ function M:eachRow4(callback)
 end
 
 function M:eachRow5(callback)
-  local component1 = self.allOf[1]
-  local component2 = self.allOf[2]
-  local component3 = self.allOf[3]
-  local component4 = self.allOf[4]
-  local component5 = self.allOf[5]
+  local component1 = self.includes[1]
+  local component2 = self.includes[2]
+  local component3 = self.includes[3]
+  local component4 = self.includes[4]
+  local component5 = self.includes[5]
 
   for _, tablet in ipairs(self.tablets) do
     for i = #tablet.shards, 1, -1 do
@@ -246,12 +317,12 @@ function M:eachRow5(callback)
 end
 
 function M:eachRow6(callback)
-  local component1 = self.allOf[1]
-  local component2 = self.allOf[2]
-  local component3 = self.allOf[3]
-  local component4 = self.allOf[4]
-  local component5 = self.allOf[5]
-  local component6 = self.allOf[6]
+  local component1 = self.includes[1]
+  local component2 = self.includes[2]
+  local component3 = self.includes[3]
+  local component4 = self.includes[4]
+  local component5 = self.includes[5]
+  local component6 = self.includes[6]
 
   for _, tablet in ipairs(self.tablets) do
     for i = #tablet.shards, 1, -1 do

@@ -9,6 +9,7 @@ local lton = require("lton")
 local ValueType = require("tabula.ValueType")
 
 local clear = assert(tableMod.clear)
+local formatArchetype = assert(archetypeMod.format)
 local keys = assert(tableMod.keys)
 local keySet = assert(tableMod.keySet)
 local sortedKeys = assert(tableMod.sortedKeys)
@@ -61,7 +62,7 @@ function M:addRow(values)
     self._nextEntity = self._nextEntity + 1
   end
 
-  local archetype = archetypeMod.fromComponentSet(values)
+  local archetype = formatArchetype(values)
   local tablet = self:addTablet(archetype)
 
   local row = {}
@@ -128,6 +129,18 @@ function M:addQuery(name, query)
     error("Duplicate query: " .. name)
   end
 
+  for _, component in ipairs(query.includes) do
+    if not self._columnTypeNames[component] then
+      error("No such column: " .. component)
+    end
+  end
+
+  for _, component in ipairs(query.excludes) do
+    if not self._columnTypeNames[component] then
+      error("No such column: " .. component)
+    end
+  end
+
   self._queries[name] = query
 end
 
@@ -143,6 +156,17 @@ function M:handleEvent(event, ...)
   end
 end
 
+function M:eachShard(queryName, callback)
+  local query = self._queries[queryName]
+
+  if not query then
+    error("No such query: " .. queryName)
+  end
+
+  query:updateTablets(self)
+  query:eachShard(callback)
+end
+
 function M:eachRow(queryName, callback)
   local query = self._queries[queryName]
 
@@ -150,6 +174,7 @@ function M:eachRow(queryName, callback)
     error("No such query: " .. queryName)
   end
 
+  query:updateTablets(self)
   query:eachRow(callback)
 end
 

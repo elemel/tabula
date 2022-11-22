@@ -2,16 +2,19 @@ local archetypeMod = require("tabula.archetype")
 local Class = require("tabula.Class")
 local tableMod = require("tabula.table")
 
+local formatArchetype = assert(archetypeMod.format)
+local parseArchetype = assert(archetypeMod.parse)
+
 local M = Class.new()
 
 function M:init(engine, archetype)
   self.engine = assert(engine)
   self.archetype = assert(archetype)
 
-  local components = archetypeMod.toComponents(self.archetype)
+  local componentSet = parseArchetype(self.archetype)
   self.columnTypes = {}
 
-  for _, component in ipairs(components) do
+  for component in pairs(componentSet) do
     local typeName = self.engine._columnTypeNames[component]
 
     if not typeName then
@@ -38,11 +41,10 @@ function M:addParent(component)
   local parent = self.parents[component]
 
   if parent == nil then
-    local components = archetypeMod.toComponents(self.archetype)
-    local componentSet = tableMod.valueSet(components)
+    local componentSet = parseArchetype(self.archetype)
     assert(componentSet[component])
     componentSet[component] = nil
-    local parentArchetype = archetypeMod.fromComponentSet(componentSet)
+    local parentArchetype = formatArchetype(componentSet)
     parent = self.engine:addTablet(parentArchetype)
     self.parents[component] = parent
   end
@@ -54,11 +56,10 @@ function M:addChild(component)
   local child = self.children[component]
 
   if child == nil then
-    local components = archetypeMod.toComponents(self.archetype)
-    local componentSet = tableMod.valueSet(components)
+    local componentSet = parseArchetype(self.archetype)
     assert(not componentSet[component])
     componentSet[component] = true
-    local childArchetype = archetypeMod.fromComponentSet(componentSet)
+    local childArchetype = formatArchetype(componentSet)
     child = self.engine:addTablet(childArchetype)
     self.children[component] = child
   end
