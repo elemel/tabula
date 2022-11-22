@@ -155,6 +155,17 @@ function M:handleEvent(event, ...)
   end
 end
 
+function M:eachShard(queryName, callback)
+  local query = self._queries[queryName]
+
+  if not query then
+    error("No such query: " .. queryName)
+  end
+
+  query:updateTablets(self)
+  query:eachShard(callback)
+end
+
 function M:eachRow(queryName, callback)
   local query = self._queries[queryName]
 

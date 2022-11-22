@@ -53,6 +53,12 @@ function M:eachShard(callback)
     self:eachShard2(callback)
   elseif #self.includes == 3 then
     self:eachShard3(callback)
+  elseif #self.includes == 4 then
+    self:eachShard4(callback)
+  elseif #self.includes == 5 then
+    self:eachShard5(callback)
+  elseif #self.includes == 6 then
+    self:eachShard6(callback)
   else
     error("Too many components")
   end
@@ -105,6 +111,75 @@ function M:eachShard3(callback)
         shard.columns[component1],
         shard.columns[component2],
         shard.columns[component3]
+      )
+    end
+  end
+end
+
+function M:eachShard4(callback)
+  local component1 = self.includes[1]
+  local component2 = self.includes[2]
+  local component3 = self.includes[3]
+  local component4 = self.includes[4]
+
+  for _, tablet in ipairs(self.tablets) do
+    for i = #tablet.shards, 1, -1 do
+      local shard = tablet.shards[i]
+
+      callback(
+        shard.size,
+        shard.columns[component1],
+        shard.columns[component2],
+        shard.columns[component3],
+        shard.columns[component4]
+      )
+    end
+  end
+end
+
+function M:eachShard5(callback)
+  local component1 = self.includes[1]
+  local component2 = self.includes[2]
+  local component3 = self.includes[3]
+  local component4 = self.includes[4]
+  local component5 = self.includes[5]
+
+  for _, tablet in ipairs(self.tablets) do
+    for i = #tablet.shards, 1, -1 do
+      local shard = tablet.shards[i]
+
+      callback(
+        shard.size,
+        shard.columns[component1],
+        shard.columns[component2],
+        shard.columns[component3],
+        shard.columns[component4],
+        shard.columns[component5]
+      )
+    end
+  end
+end
+
+function M:eachShard6(callback)
+  local component1 = self.includes[1]
+  local component2 = self.includes[2]
+  local component3 = self.includes[3]
+  local component4 = self.includes[4]
+  local component5 = self.includes[5]
+  local component6 = self.includes[6]
+
+  for _, tablet in ipairs(self.tablets) do
+    for i = #tablet.shards, 1, -1 do
+      local shard = tablet.shards[i]
+
+      callback(
+        shard.size,
+        shard.columns[component1],
+        shard.columns[component2],
+        shard.columns[component3],
+        shard.columns[component4],
+        shard.columns[component5],
+        shard.columns[component6]
       )
     end
   end
