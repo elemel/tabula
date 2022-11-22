@@ -9,6 +9,7 @@ local lton = require("lton")
 local ValueType = require("tabula.ValueType")
 
 local clear = assert(tableMod.clear)
+local formatArchetype = assert(archetypeMod.format)
 local keys = assert(tableMod.keys)
 local keySet = assert(tableMod.keySet)
 local sortedKeys = assert(tableMod.sortedKeys)
@@ -61,7 +62,7 @@ function M:addRow(values)
     self._nextEntity = self._nextEntity + 1
   end
 
-  local archetype = archetypeMod.fromComponentSet(values)
+  local archetype = formatArchetype(values)
   local tablet = self:addTablet(archetype)
 
   local row = {}
