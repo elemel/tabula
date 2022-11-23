@@ -6,12 +6,8 @@ local M = Class.new()
 function M:init(name)
   self.type = ffi.typeof(name)
   self.vlaType = ffi.typeof(name .. "[?]")
-
-  self.defaultValue = self.type()
-end
-
-function M:allocateColumn(size)
-  return self.vlaType(size)
+  self.pointerType = ffi.typeof(name .. "*")
+  self.size = ffi.sizeof(self.type)
 end
 
 return M

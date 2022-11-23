@@ -1,5 +1,6 @@
 local archetypeMod = require("tabula.archetype")
 local Class = require("tabula.Class")
+local ffi = require("ffi")
 local tableMod = require("tabula.table")
 
 local formatArchetype = assert(archetypeMod.format)
@@ -17,13 +18,13 @@ function M:init(engine, archetype)
   for component in pairs(componentSet) do
     local typeName = self.engine._columnTypeNames[component]
 
-    if not typeName then
+    if typeName == nil then
       error("No such column: " .. component)
     end
 
-    local columnType = self.engine._dataTypes[typeName]
+    local columnType = typeName and self.engine._dataTypes[typeName]
 
-    if not columnType then
+    if columnType == nil then
       error("No such type: " .. typeName)
     end
 
@@ -77,12 +78,19 @@ function M:pushRow()
 
     local shard = {
       tablet = self,
+      columnData = {},
       columns = {},
       size = 0,
     }
 
     for component, columnType in pairs(self.columnTypes) do
-      shard.columns[component] = columnType:allocateColumn(self.shardCapacity)
+      if columnType then
+        local size = math.max(1, columnType.size * self.shardCapacity)
+        shard.columnData[component] = love.data.newByteData(size)
+        shard.columns[component] = ffi.cast(columnType.pointerType, shard.columnData[component]:getFFIPointer())
+      else
+        shard.columns[component] = {}
+      end
     end
 
     table.insert(shards, shard)
@@ -102,7 +110,12 @@ function M:popRow()
 
   for component, columnType in pairs(self.columnTypes) do
     local column = shard.columns[component]
-    column[index] = columnType.defaultValue
+
+    if columnType then
+      column[index] = columnType.type()
+    else
+      column[index] = nil
+    end
   end
 
   shard.size = shard.size - 1
@@ -115,9 +128,9 @@ end
 function M:addRow(values)
   local shard, index = self:pushRow()
 
-  for component, columnType in pairs(self.columnTypes) do
+  for component, value in pairs(values) do
     local column = shard.columns[component]
-    column[index] = tableMod.get(values, component, columnType.defaultValue)
+    column[index] = value
   end
 
   return shard, index

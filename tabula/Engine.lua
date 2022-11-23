@@ -1,12 +1,10 @@
 local archetypeMod = require("tabula.archetype")
 local Class = require("tabula.Class")
-local CType = require("tabula.CType")
 local rowMod = require("tabula.row")
 local ffi = require("ffi")
 local tableMod = require("tabula.table")
 local Tablet = require("tabula.Tablet")
 local lton = require("lton")
-local ValueType = require("tabula.ValueType")
 
 local clear = assert(tableMod.clear)
 local formatArchetype = assert(archetypeMod.format)
@@ -43,7 +41,7 @@ function M:addColumn(component, typeName)
     error("Duplicate column: " .. component)
   end
 
-  self._columnTypeNames[component] = typeName
+  self._columnTypeNames[component] = typeName or false
 end
 
 function M:addRow(values)
@@ -130,13 +128,13 @@ function M:addQuery(name, query)
   end
 
   for _, component in ipairs(query.includes) do
-    if not self._columnTypeNames[component] then
+    if self._columnTypeNames[component] == nil then
       error("No such column: " .. component)
     end
   end
 
   for _, component in ipairs(query.excludes) do
-    if not self._columnTypeNames[component] then
+    if self._columnTypeNames[component] == nil then
       error("No such column: " .. component)
     end
   end
