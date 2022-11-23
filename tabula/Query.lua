@@ -22,14 +22,14 @@ function M:updateTablets(engine)
       local included = true
 
       for _, component in pairs(self.includes) do
-        if not tablet.columnTypes[component] then
+        if tablet.columnTypes[component] == nil then
           included = false
           break
         end
       end
 
       for _, component in pairs(self.excludes) do
-        if tablet.columnTypes[component] then
+        if tablet.columnTypes[component] ~= nil then
           included = false
           break
         end
