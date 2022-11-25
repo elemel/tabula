@@ -85,9 +85,11 @@ function M:pushRow()
 
     for component, columnType in pairs(self.columnTypes) do
       if columnType then
-        local size = math.max(1, columnType.size * self.shardCapacity)
-        shard.columnData[component] = love.data.newByteData(size)
-        shard.columns[component] = ffi.cast(columnType.pointerType, shard.columnData[component]:getFFIPointer())
+        local valueByteSize = ffi.sizeof(columnType.valueType)
+        local columnByteSize = math.max(1, valueByteSize * self.shardCapacity)
+        local columnData = love.data.newByteData(columnByteSize)
+        shard.columnData[component] = columnData
+        shard.columns[component] = ffi.cast(columnType.pointerType, columnData:getFFIPointer())
       else
         shard.columns[component] = {}
       end
