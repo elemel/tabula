@@ -2,6 +2,7 @@ local archetypeMod = require("tabula.archetype")
 local Class = require("tabula.Class")
 local rowMod = require("tabula.row")
 local ffi = require("ffi")
+local Query = require("tabula.Query")
 local tableMod = require("tabula.table")
 local Tablet = require("tabula.Tablet")
 local lton = require("lton")
@@ -122,24 +123,27 @@ function M:addSystem(event, system)
   table.insert(self._eventSystems[event], system)
 end
 
-function M:addQuery(name, query)
+function M:addQuery(name, includes, excludes)
   if self._queries[name] then
     error("Duplicate query: " .. name)
   end
 
-  for _, component in ipairs(query.includes) do
+  includes = includes or {}
+  excludes = excludes or {}
+
+  for _, component in ipairs(includes) do
     if self._columnTypeNames[component] == nil then
       error("No such column: " .. component)
     end
   end
 
-  for _, component in ipairs(query.excludes) do
+  for _, component in ipairs(excludes) do
     if self._columnTypeNames[component] == nil then
       error("No such column: " .. component)
     end
   end
 
-  self._queries[name] = query
+  self._queries[name] = Query.new(includes, excludes)
 end
 
 function M:handleEvent(event, ...)

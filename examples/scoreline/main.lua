@@ -263,38 +263,29 @@ function love.load()
   engine:addSystem("update", updateWallCollisions)
   engine:addSystem("update", updatePaddleCollisions)
 
-  engine:addQuery("drawBoxes", tabula.newQuery({ "box", "color", "position" }))
-  engine:addQuery(
-    "handleMouseMoved",
-    tabula.newQuery({ "position", "paddleTag", "playerTag" })
-  )
+  engine:addQuery("drawBoxes", { "box", "color", "position" })
+  engine:addQuery("handleMouseMoved", { "position", "paddleTag", "playerTag" })
 
   engine:addQuery(
     "updateVelocityPositions",
-    tabula.newQuery({ "position", "previousPosition", "velocity" })
+    { "position", "previousPosition", "velocity" }
   )
 
   engine:addQuery(
     "updateWallCollisions",
-    tabula.newQuery({ "box", "position", "velocity", "ballTag" })
+    { "box", "position", "velocity", "ballTag" }
   )
 
-  engine:addQuery(
-    "updatePaddleCollisions",
-    tabula.newQuery({ "box", "position", "paddleTag" })
-  )
+  engine:addQuery("updatePaddleCollisions", { "box", "position", "paddleTag" })
 
-  engine:addQuery(
-    "updatePaddleBallCollisions",
-    tabula.newQuery({
-      "box",
-      "color",
-      "position",
-      "previousPosition",
-      "velocity",
-      "ballTag",
-    })
-  )
+  engine:addQuery("updatePaddleBallCollisions", {
+    "box",
+    "color",
+    "position",
+    "previousPosition",
+    "velocity",
+    "ballTag",
+  })
 end
 
 function love.draw(...)

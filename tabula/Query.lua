@@ -2,13 +2,14 @@ local Class = require("tabula.Class")
 local tableMod = require("tabula.table")
 
 local clear = assert(tableMod.clear)
+local copy = assert(tableMod.copy)
 local insert = assert(table.insert)
 
 local M = Class.new()
 
 function M:init(includes, excludes)
-  self.includes = tableMod.copy(includes or {})
-  self.excludes = tableMod.copy(excludes or {})
+  self.includes = copy(includes)
+  self.excludes = copy(excludes)
 
   self.tabletVersion = 0
   self.tablets = {}
@@ -36,7 +37,7 @@ function M:updateTablets(engine)
       end
 
       if included then
-        table.insert(self.tablets, tablet)
+        insert(self.tablets, tablet)
       end
     end
 
