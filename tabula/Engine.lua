@@ -2,7 +2,7 @@ local archetypeMod = require("tabula.archetype")
 local Class = require("tabula.Class")
 local rowMod = require("tabula.row")
 local ffi = require("ffi")
-local Query = require("tabula.Query")
+local queryMod = require("tabula.query")
 local tableMod = require("tabula.table")
 local Tablet = require("tabula.Tablet")
 local lton = require("lton")
@@ -22,11 +22,11 @@ function M:init()
   self._dataTypes = {}
   self._columnTypeNames = {}
 
-  self._eventSystems = {}
-  self._queries = {}
-
   self._tablets = {}
   self._tabletVersion = 1
+
+  self._queries = {}
+  self._eventSystems = {}
 end
 
 function M:addType(name, dataType)
@@ -143,7 +143,7 @@ function M:addQuery(name, includes, excludes)
     end
   end
 
-  self._queries[name] = Query.new(includes, excludes)
+  self._queries[name] = queryMod.newQuery(includes, excludes)
 end
 
 function M:handleEvent(event, ...)
@@ -158,17 +158,6 @@ function M:handleEvent(event, ...)
   end
 end
 
-function M:eachShard(queryName, callback)
-  local query = self._queries[queryName]
-
-  if not query then
-    error("No such query: " .. queryName)
-  end
-
-  query:updateTablets(self)
-  query:eachShard(callback)
-end
-
 function M:eachRow(queryName, callback)
   local query = self._queries[queryName]
 
@@ -176,8 +165,8 @@ function M:eachRow(queryName, callback)
     error("No such query: " .. queryName)
   end
 
-  query:updateTablets(self)
-  query:eachRow(callback)
+  queryMod.updateTablets(query, self)
+  queryMod.eachRow(query, callback)
 end
 
 return M
