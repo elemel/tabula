@@ -1,6 +1,7 @@
 local tableMod = require("tabula.table")
 
 local clear = assert(tableMod.clear)
+local concat = assert(table.concat)
 local copy = assert(tableMod.copy)
 local insert = assert(table.insert)
 
@@ -46,161 +47,86 @@ function M.updateTablets(query, engine)
   end
 end
 
-function M.eachRow(query, callback)
-  if #query.includes == 0 then
-    M.eachRow0(query, callback)
-  elseif #query.includes == 1 then
-    M.eachRow1(query, callback)
-  elseif #query.includes == 2 then
-    M.eachRow2(query, callback)
-  elseif #query.includes == 3 then
-    M.eachRow3(query, callback)
-  elseif #query.includes == 4 then
-    M.eachRow4(query, callback)
-  elseif #query.includes == 5 then
-    M.eachRow5(query, callback)
-  elseif #query.includes == 6 then
-    M.eachRow6(query, callback)
-  else
-    error("Too many components")
+function M.generateEachRowCode(arity, buffer)
+  buffer = buffer or {}
+
+  insert(
+    buffer,
+    [[return function(tablets, components, callback)
+]]
+  )
+
+  for i = 1, arity do
+    insert(buffer, "  local component")
+    insert(buffer, i)
+    insert(buffer, " = components[")
+    insert(buffer, i)
+    insert(buffer, "]\n")
   end
-end
 
-function M.eachRow0(callback)
-  for _, tablet in ipairs(query.tablets) do
-    for i = #tablet.shards, 1, -1 do
-      local shard = tablet.shards[i]
+  insert(
+    buffer,
+    [[
 
-      for j = shard.size - 1, 0, -1 do
-        callback(j)
+  for _, tablet in ipairs(tablets) do
+    local shards = tablet.shards
+
+    for j = #shards, 1, -1 do
+      local shard = shards[j]
+      local columns = shard.columns
+
+]]
+  )
+
+  for i = 1, arity do
+    insert(buffer, "      local column")
+    insert(buffer, i)
+    insert(buffer, " = columns[component")
+    insert(buffer, i)
+    insert(buffer, "]\n")
+  end
+
+  insert(
+    buffer,
+    [[
+
+      for k = shard.size - 1, 0, -1 do
+        callback(k]]
+  )
+
+  for i = 1, arity do
+    insert(buffer, ", column")
+    insert(buffer, i)
+  end
+
+  insert(
+    buffer,
+    [[)
       end
     end
   end
 end
+]]
+  )
 
-function M.eachRow1(query, callback)
-  local component1 = query.includes[1]
-
-  for _, tablet in ipairs(query.tablets) do
-    for i = #tablet.shards, 1, -1 do
-      local shard = tablet.shards[i]
-      local column1 = shard.columns[component1]
-
-      for j = shard.size - 1, 0, -1 do
-        callback(j, column1)
-      end
-    end
-  end
+  return buffer
 end
 
-function M.eachRow2(query, callback)
-  local component1 = query.includes[1]
-  local component2 = query.includes[2]
+M.eachRowMt = {
+  __index = function(self, arity)
+    print("Generating row-traversal code for arity " .. arity)
+    local buffer = M.generateEachRowCode(arity)
+    local code = concat(buffer)
 
-  for _, tablet in ipairs(query.tablets) do
-    for i = #tablet.shards, 1, -1 do
-      local shard = tablet.shards[i]
+    print()
+    print(code)
 
-      local column1 = shard.columns[component1]
-      local column2 = shard.columns[component2]
+    local func = load(code)()
+    self[arity] = func
+    return func
+  end,
+}
 
-      for j = shard.size - 1, 0, -1 do
-        callback(j, column1, column2)
-      end
-    end
-  end
-end
-
-function M.eachRow3(query, callback)
-  local component1 = query.includes[1]
-  local component2 = query.includes[2]
-  local component3 = query.includes[3]
-
-  for _, tablet in ipairs(query.tablets) do
-    for i = #tablet.shards, 1, -1 do
-      local shard = tablet.shards[i]
-
-      local column1 = shard.columns[component1]
-      local column2 = shard.columns[component2]
-      local column3 = shard.columns[component3]
-
-      for j = shard.size - 1, 0, -1 do
-        callback(j, column1, column2, column3)
-      end
-    end
-  end
-end
-
-function M.eachRow4(query, callback)
-  local component1 = query.includes[1]
-  local component2 = query.includes[2]
-  local component3 = query.includes[3]
-  local component4 = query.includes[4]
-
-  for _, tablet in ipairs(query.tablets) do
-    for i = #tablet.shards, 1, -1 do
-      local shard = tablet.shards[i]
-
-      local column1 = shard.columns[component1]
-      local column2 = shard.columns[component2]
-      local column3 = shard.columns[component3]
-      local column4 = shard.columns[component4]
-
-      for j = shard.size - 1, 0, -1 do
-        callback(j, column1, column2, column3, column4)
-      end
-    end
-  end
-end
-
-function M.eachRow5(query, callback)
-  local component1 = query.includes[1]
-  local component2 = query.includes[2]
-  local component3 = query.includes[3]
-  local component4 = query.includes[4]
-  local component5 = query.includes[5]
-
-  for _, tablet in ipairs(query.tablets) do
-    for i = #tablet.shards, 1, -1 do
-      local shard = tablet.shards[i]
-
-      local column1 = shard.columns[component1]
-      local column2 = shard.columns[component2]
-      local column3 = shard.columns[component3]
-      local column4 = shard.columns[component4]
-      local column5 = shard.columns[component5]
-
-      for j = shard.size - 1, 0, -1 do
-        callback(j, column1, column2, column3, column4, column5)
-      end
-    end
-  end
-end
-
-function M.eachRow6(query, callback)
-  local component1 = query.includes[1]
-  local component2 = query.includes[2]
-  local component3 = query.includes[3]
-  local component4 = query.includes[4]
-  local component5 = query.includes[5]
-  local component6 = query.includes[6]
-
-  for _, tablet in ipairs(query.tablets) do
-    for i = #tablet.shards, 1, -1 do
-      local shard = tablet.shards[i]
-
-      local column1 = shard.columns[component1]
-      local column2 = shard.columns[component2]
-      local column3 = shard.columns[component3]
-      local column4 = shard.columns[component4]
-      local column5 = shard.columns[component5]
-      local column6 = shard.columns[component6]
-
-      for j = shard.size - 1, 0, -1 do
-        callback(j, column1, column2, column3, column4, column5, column6)
-      end
-    end
-  end
-end
+M.eachRowFuncs = setmetatable({}, M.eachRowMt)
 
 return M

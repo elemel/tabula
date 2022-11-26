@@ -166,7 +166,12 @@ function M:eachRow(queryName, callback)
   end
 
   queryMod.updateTablets(query, self)
-  queryMod.eachRow(query, callback)
+  queryMod.eachRowFuncs[#query.includes](
+    query.tablets,
+    query.includes,
+    callback
+  )
+  -- queryMod.eachRow(query, callback)
 end
 
 return M
