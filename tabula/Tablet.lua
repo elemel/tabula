@@ -41,7 +41,7 @@ end
 function M:addParent(component)
   local parent = self.parents[component]
 
-  if parent == nil then
+  if not parent then
     local componentSet = parseArchetype(self.archetype)
     assert(componentSet[component])
     componentSet[component] = nil
@@ -56,7 +56,7 @@ end
 function M:addChild(component)
   local child = self.children[component]
 
-  if child == nil then
+  if not child then
     local componentSet = parseArchetype(self.archetype)
     assert(not componentSet[component])
     componentSet[component] = true
@@ -143,9 +143,9 @@ function M:copyRow(targetShard, targetIndex, sourceShard, sourceIndex)
   assert(targetShard.tablet == self)
 
   for component, targetColumn in pairs(targetShard.columns) do
-    local sourceColumn = sourceShard[component]
+    local sourceColumn = sourceShard.columns[component]
 
-    if sourceColumn ~= nil then
+    if sourceColumn then
       targetColumn[targetIndex] = sourceColumn[sourceIndex]
     end
   end
