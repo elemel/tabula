@@ -264,7 +264,11 @@ function love.load()
   engine:addSystem("update", updatePaddleCollisions)
 
   engine:addQuery("drawBoxes", { "box", "color", "position" })
-  engine:addQuery("handleMouseMoved", { "position", "paddleTag", "playerTag" })
+  engine:addQuery(
+    "handleMouseMoved",
+    { "position" },
+    { "paddleTag", "playerTag" }
+  )
 
   engine:addQuery(
     "updateVelocityPositions",
@@ -273,10 +277,15 @@ function love.load()
 
   engine:addQuery(
     "updateWallCollisions",
-    { "box", "position", "velocity", "ballTag" }
+    { "box", "position", "velocity" },
+    { "ballTag" }
   )
 
-  engine:addQuery("updatePaddleCollisions", { "box", "position", "paddleTag" })
+  engine:addQuery(
+    "updatePaddleCollisions",
+    { "box", "position" },
+    { "paddleTag" }
+  )
 
   engine:addQuery("updatePaddleBallCollisions", {
     "box",
@@ -284,6 +293,7 @@ function love.load()
     "position",
     "previousPosition",
     "velocity",
+  }, {
     "ballTag",
   })
 end

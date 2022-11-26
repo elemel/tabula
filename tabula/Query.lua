@@ -7,9 +7,10 @@ local insert = assert(table.insert)
 
 local M = {}
 
-function M.newQuery(includes, excludes)
+function M.newQuery(arguments, tags, excludes)
   return {
-    includes = copy(includes),
+    arguments = copy(arguments),
+    tags = copy(tags),
     excludes = copy(excludes),
 
     tabletVersion = 0,
@@ -24,7 +25,14 @@ function M.updateTablets(query, engine)
     for _, tablet in pairs(engine._tablets) do
       local included = true
 
-      for _, component in pairs(query.includes) do
+      for _, component in pairs(query.arguments) do
+        if tablet.columnTypes[component] == nil then
+          included = false
+          break
+        end
+      end
+
+      for _, component in pairs(query.tags) do
         if tablet.columnTypes[component] == nil then
           included = false
           break
@@ -118,8 +126,8 @@ M.eachRowMt = {
     local buffer = M.generateEachRowCode(arity)
     local code = concat(buffer)
 
-    print()
-    print(code)
+    -- print()
+    -- print(code)
 
     local func = load(code)()
     self[arity] = func

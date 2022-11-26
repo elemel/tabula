@@ -123,15 +123,22 @@ function M:addSystem(event, system)
   table.insert(self._eventSystems[event], system)
 end
 
-function M:addQuery(name, includes, excludes)
+function M:addQuery(name, arguments, tags, excludes)
   if self._queries[name] then
     error("Duplicate query: " .. name)
   end
 
-  includes = includes or {}
+  arguments = arguments or {}
+  tags = tags or {}
   excludes = excludes or {}
 
-  for _, component in ipairs(includes) do
+  for _, component in ipairs(arguments) do
+    if self._columnTypeNames[component] == nil then
+      error("No such column: " .. component)
+    end
+  end
+
+  for _, component in ipairs(tags) do
     if self._columnTypeNames[component] == nil then
       error("No such column: " .. component)
     end
@@ -143,7 +150,7 @@ function M:addQuery(name, includes, excludes)
     end
   end
 
-  self._queries[name] = queryMod.newQuery(includes, excludes)
+  self._queries[name] = queryMod.newQuery(arguments, tags, excludes)
 end
 
 function M:handleEvent(event, ...)
@@ -166,12 +173,10 @@ function M:eachRow(queryName, callback)
   end
 
   queryMod.updateTablets(query, self)
-  queryMod.eachRowFuncs[#query.includes](
-    query.tablets,
-    query.includes,
-    callback
-  )
-  -- queryMod.eachRow(query, callback)
+
+  local arity = #query.arguments
+  local func = queryMod.eachRowFuncs[arity]
+  func(query.tablets, query.arguments, callback)
 end
 
 return M
