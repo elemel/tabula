@@ -29,9 +29,9 @@ function M:init()
   self._eventSystems = {}
 end
 
-function M:addType(name, dataType)
+function M:addDataType(name, dataType)
   if self._dataTypes[name] then
-    error("Duplicate type: " .. name)
+    error("Duplicate data type: " .. name)
   end
 
   self._dataTypes[name] = dataType

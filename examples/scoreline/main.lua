@@ -169,10 +169,10 @@ function love.load()
     } vec2;
   ]])
 
-  engine:addType("double", tabula.newDataType("double"))
-  engine:addType("color4", tabula.newDataType("color4"))
-  engine:addType("tag", tabula.newDataType("tag"))
-  engine:addType("vec2", tabula.newDataType("vec2"))
+  engine:addDataType("double", tabula.newDataType("double"))
+  engine:addDataType("color4", tabula.newDataType("color4"))
+  engine:addDataType("tag", tabula.newDataType("tag"))
+  engine:addDataType("vec2", tabula.newDataType("vec2"))
 
   engine:addColumn("entity", "double")
   engine:addColumn("position", "vec2")
