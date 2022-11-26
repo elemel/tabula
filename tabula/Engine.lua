@@ -2,6 +2,7 @@ local archetypeMod = require("tabula.archetype")
 local Class = require("tabula.Class")
 local rowMod = require("tabula.row")
 local ffi = require("ffi")
+local queryMod = require("tabula.query")
 local tableMod = require("tabula.table")
 local Tablet = require("tabula.Tablet")
 local lton = require("lton")
@@ -21,11 +22,11 @@ function M:init()
   self._dataTypes = {}
   self._columnTypeNames = {}
 
-  self._eventSystems = {}
-  self._queries = {}
-
   self._tablets = {}
   self._tabletVersion = 1
+
+  self._queries = {}
+  self._eventSystems = {}
 end
 
 function M:addType(name, dataType)
@@ -122,24 +123,34 @@ function M:addSystem(event, system)
   table.insert(self._eventSystems[event], system)
 end
 
-function M:addQuery(name, query)
+function M:addQuery(name, arguments, tags, excludes)
   if self._queries[name] then
     error("Duplicate query: " .. name)
   end
 
-  for _, component in ipairs(query.includes) do
+  arguments = arguments or {}
+  tags = tags or {}
+  excludes = excludes or {}
+
+  for _, component in ipairs(arguments) do
     if self._columnTypeNames[component] == nil then
       error("No such column: " .. component)
     end
   end
 
-  for _, component in ipairs(query.excludes) do
+  for _, component in ipairs(tags) do
     if self._columnTypeNames[component] == nil then
       error("No such column: " .. component)
     end
   end
 
-  self._queries[name] = query
+  for _, component in ipairs(excludes) do
+    if self._columnTypeNames[component] == nil then
+      error("No such column: " .. component)
+    end
+  end
+
+  self._queries[name] = queryMod.newQuery(arguments, tags, excludes)
 end
 
 function M:handleEvent(event, ...)
@@ -154,17 +165,6 @@ function M:handleEvent(event, ...)
   end
 end
 
-function M:eachShard(queryName, callback)
-  local query = self._queries[queryName]
-
-  if not query then
-    error("No such query: " .. queryName)
-  end
-
-  query:updateTablets(self)
-  query:eachShard(callback)
-end
-
 function M:eachRow(queryName, callback)
   local query = self._queries[queryName]
 
@@ -172,8 +172,11 @@ function M:eachRow(queryName, callback)
     error("No such query: " .. queryName)
   end
 
-  query:updateTablets(self)
-  query:eachRow(callback)
+  queryMod.updateTablets(query, self)
+
+  local arity = #query.arguments
+  local func = queryMod.eachRowFuncs[arity]
+  func(query.tablets, query.arguments, callback)
 end
 
 return M
