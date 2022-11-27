@@ -169,20 +169,20 @@ function love.load()
     } vec2;
   ]])
 
-  engine:addDataType("double", tabula.newDataType("double"))
-  engine:addDataType("color4", tabula.newDataType("color4"))
-  engine:addDataType("tag", tabula.newDataType("tag"))
-  engine:addDataType("vec2", tabula.newDataType("vec2"))
+  engine:addDataType("color4")
+  engine:addDataType("double")
+  engine:addDataType("tag")
+  engine:addDataType("vec2")
 
+  engine:addColumn("ballTag", "tag")
+  engine:addColumn("box", "vec2")
+  engine:addColumn("color", "color4")
   engine:addColumn("entity", "double")
+  engine:addColumn("paddleTag", "tag")
+  engine:addColumn("playerTag", "tag")
   engine:addColumn("position", "vec2")
   engine:addColumn("previousPosition", "vec2")
   engine:addColumn("velocity", "vec2")
-  engine:addColumn("box", "vec2")
-  engine:addColumn("color", "color4")
-  engine:addColumn("paddleTag", "tag")
-  engine:addColumn("playerTag", "tag")
-  engine:addColumn("ballTag", "tag")
 
   engine:addRow({
     box = { 10, 50 },

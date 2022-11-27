@@ -1,8 +1,9 @@
 local archetypeMod = require("tabula.archetype")
 local Class = require("tabula.Class")
-local rowMod = require("tabula.row")
+local dataMod = require("tabula.data")
 local ffi = require("ffi")
 local queryMod = require("tabula.query")
+local rowMod = require("tabula.row")
 local tableMod = require("tabula.table")
 local Tablet = require("tabula.Tablet")
 local lton = require("lton")
@@ -29,12 +30,12 @@ function M:init()
   self._eventSystems = {}
 end
 
-function M:addDataType(name, dataType)
+function M:addDataType(name)
   if self._dataTypes[name] then
     error("Duplicate data type: " .. name)
   end
 
-  self._dataTypes[name] = dataType
+  self._dataTypes[name] = dataMod.newDataType(name)
 end
 
 function M:addColumn(component, typeName)
