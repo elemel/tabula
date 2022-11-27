@@ -12,23 +12,12 @@ function M:init(engine, archetype)
   self.engine = assert(engine)
   self.archetype = assert(archetype)
 
-  local componentSet = parseArchetype(self.archetype)
-  self.columnTypes = {}
+  self.componentSet = parseArchetype(self.archetype)
 
-  for component in pairs(componentSet) do
-    local typeName = self.engine._columnTypeNames[component]
-
-    if typeName == nil then
-      error("No such column: " .. component)
+  for component in pairs(self.componentSet) do
+    if not self.engine._componentSet[component] then
+      error("No such component: " .. component)
     end
-
-    local columnType = typeName and self.engine._dataTypes[typeName]
-
-    if columnType == nil then
-      error("No such type: " .. typeName)
-    end
-
-    self.columnTypes[component] = columnType
   end
 
   self.shards = {}
@@ -83,14 +72,16 @@ function M:pushRow()
       size = 0,
     }
 
-    for component, columnType in pairs(self.columnTypes) do
-      if columnType then
-        local valueByteSize = ffi.sizeof(columnType.valueType)
+    for component in pairs(self.componentSet) do
+      local componentType = self.engine._componentTypes[component]
+
+      if componentType then
+        local valueByteSize = ffi.sizeof(componentType.valueType)
         local columnByteSize = math.max(1, valueByteSize * self.shardCapacity)
         local columnData = love.data.newByteData(columnByteSize)
         shard.columnData[component] = columnData
         shard.columns[component] =
-          ffi.cast(columnType.pointerType, columnData:getFFIPointer())
+          ffi.cast(componentType.pointerType, columnData:getFFIPointer())
       else
         shard.columns[component] = {}
       end
@@ -111,11 +102,12 @@ function M:popRow()
   local shard = self.shards[#self.shards]
   local index = shard.size - 1
 
-  for component, columnType in pairs(self.columnTypes) do
+  for component in pairs(self.componentSet) do
     local column = shard.columns[component]
+    local componentType = self.engine._componentTypes[component]
 
-    if columnType then
-      column[index] = columnType.type()
+    if componentType then
+      column[index] = componentType.valueType()
     else
       column[index] = nil
     end
