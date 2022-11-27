@@ -17,7 +17,7 @@ M.mt = {
       local newShard, newIndex = newTablet:pushRow()
 
       newTablet:copyRow(newShard, newIndex, row._shard, row._index)
-      newshard.columns[component][newIndex] = value
+      newShard.columns[component][newIndex] = value
       oldTablet:removeRow(row._shard, row._index)
 
       row._shard = newShard

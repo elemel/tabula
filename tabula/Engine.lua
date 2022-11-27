@@ -1,8 +1,9 @@
 local archetypeMod = require("tabula.archetype")
 local Class = require("tabula.Class")
-local rowMod = require("tabula.row")
+local dataMod = require("tabula.data")
 local ffi = require("ffi")
 local queryMod = require("tabula.query")
+local rowMod = require("tabula.row")
 local tableMod = require("tabula.table")
 local Tablet = require("tabula.Tablet")
 local lton = require("lton")
@@ -20,7 +21,8 @@ function M:init()
   self._nextEntity = 1
 
   self._dataTypes = {}
-  self._columnTypeNames = {}
+  self._componentSet = {}
+  self._componentTypes = {}
 
   self._tablets = {}
   self._tabletVersion = 1
@@ -29,20 +31,30 @@ function M:init()
   self._eventSystems = {}
 end
 
-function M:addType(name, dataType)
+function M:addDataType(name)
   if self._dataTypes[name] then
-    error("Duplicate type: " .. name)
+    error("Duplicate data type: " .. name)
   end
 
-  self._dataTypes[name] = dataType
+  self._dataTypes[name] = dataMod.newDataType(name)
 end
 
-function M:addColumn(component, typeName)
-  if self._columnTypeNames[component] then
-    error("Duplicate column: " .. component)
+function M:addComponent(component, typeName)
+  if self._componentSet[component] then
+    error("Duplicate component: " .. component)
   end
 
-  self._columnTypeNames[component] = typeName or false
+  if typeName then
+    local componentType = self._dataTypes[typeName]
+
+    if not componentType then
+      error("No such data type: " .. typeName)
+    end
+
+    self._componentTypes[component] = componentType
+  end
+
+  self._componentSet[component] = true
 end
 
 function M:addRow(values)
@@ -133,20 +145,20 @@ function M:addQuery(name, arguments, tags, excludes)
   excludes = excludes or {}
 
   for _, component in ipairs(arguments) do
-    if self._columnTypeNames[component] == nil then
-      error("No such column: " .. component)
+    if not self._componentSet[component] then
+      error("No such component: " .. component)
     end
   end
 
   for _, component in ipairs(tags) do
-    if self._columnTypeNames[component] == nil then
-      error("No such column: " .. component)
+    if not self._componentSet[component] then
+      error("No such component: " .. component)
     end
   end
 
   for _, component in ipairs(excludes) do
-    if self._columnTypeNames[component] == nil then
-      error("No such column: " .. component)
+    if not self._componentSet[component] then
+      error("No such component: " .. component)
     end
   end
 
