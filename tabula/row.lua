@@ -1,3 +1,5 @@
+local shardMod = require("tabula.shard")
+
 local M = {}
 
 M.mt = {
@@ -16,7 +18,13 @@ M.mt = {
       local newTablet = oldTablet:addChild(component)
       local newShard, newIndex = newTablet:pushRow()
 
-      newTablet:copyRow(newShard, newIndex, row._shard, row._index)
+      shardMod.copyRow(
+        oldTablet.componentSet,
+        row._shard,
+        row._index,
+        newShard,
+        newIndex
+      )
       newShard.columns[component][newIndex] = value
       oldTablet:removeRow(row._shard, row._index)
 
@@ -28,7 +36,13 @@ M.mt = {
       local newTablet = oldTablet:addParent(component)
       local newShard, newIndex = newTablet:pushRow()
 
-      newTablet:copyRow(newShard, newIndex, row._shard, row._index)
+      shardMod.copyRow(
+        newTablet.componentSet,
+        row._shard,
+        row._index,
+        newShard,
+        newIndex
+      )
       oldTablet:removeRow(row._shard, row._index)
 
       row._shard = newShard

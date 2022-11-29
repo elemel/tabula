@@ -1,6 +1,6 @@
 local archetypeMod = require("tabula.archetype")
 local Class = require("tabula.Class")
-local ffi = require("ffi")
+local shardMod = require("tabula.shard")
 local tableMod = require("tabula.table")
 
 local formatArchetype = assert(archetypeMod.format)
@@ -65,28 +65,7 @@ function M:pushRow()
       "Adding shard #" .. (#shards + 1) .. " for archetype: " .. self.archetype
     )
 
-    local shard = {
-      tablet = self,
-      columnData = {},
-      columns = {},
-      size = 0,
-    }
-
-    for component in pairs(self.componentSet) do
-      local componentType = self.engine._componentTypes[component]
-
-      if componentType then
-        local valueByteSize = ffi.sizeof(componentType.valueType)
-        local columnByteSize = math.max(1, valueByteSize * self.shardCapacity)
-        local columnData = love.data.newByteData(columnByteSize)
-        shard.columnData[component] = columnData
-        shard.columns[component] =
-          ffi.cast(componentType.pointerType, columnData:getFFIPointer())
-      else
-        shard.columns[component] = {}
-      end
-    end
-
+    local shard = shardMod.newShard(self)
     table.insert(shards, shard)
   end
 
@@ -131,23 +110,11 @@ function M:addRow(values)
   return shard, index
 end
 
-function M:copyRow(targetShard, targetIndex, sourceShard, sourceIndex)
-  assert(targetShard.tablet == self)
-
-  for component, targetColumn in pairs(targetShard.columns) do
-    local sourceColumn = sourceShard.columns[component]
-
-    if sourceColumn then
-      targetColumn[targetIndex] = sourceColumn[sourceIndex]
-    end
-  end
-end
-
 function M:removeRow(shard, index)
   local lastShard = self.shards[#self.shards]
   local lastIndex = lastShard.size - 1
 
-  self:copyRow(shard, index, lastShard, lastIndex)
+  shardMod.copyRow(self.componentSet, lastShard, lastIndex, shard, index)
   self:popRow()
 end
 
