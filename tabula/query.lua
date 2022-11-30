@@ -81,7 +81,6 @@ function M.generateEachRowCode(arity, buffer)
 
     for j = #shards, 1, -1 do
       local shard = shards[j]
-      local columns = shard.columns
 
 ]]
   )
@@ -89,7 +88,7 @@ function M.generateEachRowCode(arity, buffer)
   for i = 1, arity do
     insert(buffer, "      local column")
     insert(buffer, i)
-    insert(buffer, " = columns[component")
+    insert(buffer, " = shard[component")
     insert(buffer, i)
     insert(buffer, "]\n")
   end
@@ -98,7 +97,7 @@ function M.generateEachRowCode(arity, buffer)
     buffer,
     [[
 
-      for k = shard.size - 1, 0, -1 do
+      for k = shard._size - 1, 0, -1 do
         callback(k]]
   )
 

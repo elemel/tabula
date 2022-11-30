@@ -60,7 +60,7 @@ end
 function M:pushRow()
   local shards = self.shards
 
-  if #shards == 0 or shards[#shards].size == self.shardCapacity then
+  if #shards == 0 or shards[#shards]._size == self.shardCapacity then
     print(
       "Adding shard #" .. (#shards + 1) .. " for archetype: " .. self.archetype
     )
@@ -71,18 +71,18 @@ function M:pushRow()
 
   local shard = shards[#shards]
 
-  local index = shard.size
-  shard.size = shard.size + 1
+  local index = shard._size
+  shard._size = shard._size + 1
 
   return shard, index
 end
 
 function M:popRow()
   local shard = self.shards[#self.shards]
-  local index = shard.size - 1
+  local index = shard._size - 1
 
   for component in pairs(self.componentSet) do
-    local column = shard.columns[component]
+    local column = shard[component]
     local componentType = self.engine._componentTypes[component]
 
     if componentType then
@@ -92,9 +92,9 @@ function M:popRow()
     end
   end
 
-  shard.size = shard.size - 1
+  shard._size = shard._size - 1
 
-  if shard.size == 0 then
+  if shard._size == 0 then
     table.remove(self.shards)
   end
 end
@@ -103,7 +103,7 @@ function M:addRow(values)
   local shard, index = self:pushRow()
 
   for component, value in pairs(values) do
-    local column = shard.columns[component]
+    local column = shard[component]
     column[index] = value
   end
 
@@ -112,7 +112,7 @@ end
 
 function M:removeRow(shard, index)
   local lastShard = self.shards[#self.shards]
-  local lastIndex = lastShard.size - 1
+  local lastIndex = lastShard._size - 1
 
   shardMod.copyRow(self.componentSet, lastShard, lastIndex, shard, index)
   self:popRow()

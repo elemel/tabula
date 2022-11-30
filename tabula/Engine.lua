@@ -94,7 +94,7 @@ function M:removeRow(entity)
     error("No such row: " .. entity)
   end
 
-  row._shard.tablet:removeRow(row._shard, row._index)
+  row._shard._tablet:removeRow(row._shard, row._index)
 
   setmetatable(row, nil)
   clear(row)
