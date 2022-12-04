@@ -21,8 +21,8 @@ function M:init()
   self._nextEntity = 1
 
   self._dataTypes = {}
-  self._componentSet = {}
-  self._componentTypes = {}
+  self._columnSet = {}
+  self._columnTypes = {}
 
   self._tablets = {}
   self._tabletVersion = 1
@@ -39,22 +39,22 @@ function M:addDataType(name)
   self._dataTypes[name] = dataMod.newDataType(name)
 end
 
-function M:addComponent(component, typeName)
-  if self._componentSet[component] then
-    error("Duplicate component: " .. component)
+function M:addColumn(component, typeName)
+  if self._columnSet[component] then
+    error("Duplicate column: " .. component)
   end
 
   if typeName then
-    local componentType = self._dataTypes[typeName]
+    local columnType = self._dataTypes[typeName]
 
-    if not componentType then
+    if not columnType then
       error("No such data type: " .. typeName)
     end
 
-    self._componentTypes[component] = componentType
+    self._columnTypes[component] = columnType
   end
 
-  self._componentSet[component] = true
+  self._columnSet[component] = true
 end
 
 function M:addRow(values)
@@ -145,20 +145,20 @@ function M:addQuery(name, arguments, tags, excludes)
   excludes = excludes or {}
 
   for _, component in ipairs(arguments) do
-    if not self._componentSet[component] then
-      error("No such component: " .. component)
+    if not self._columnSet[component] then
+      error("No such column: " .. component)
     end
   end
 
   for _, component in ipairs(tags) do
-    if not self._componentSet[component] then
-      error("No such component: " .. component)
+    if not self._columnSet[component] then
+      error("No such column: " .. component)
     end
   end
 
   for _, component in ipairs(excludes) do
-    if not self._componentSet[component] then
-      error("No such component: " .. component)
+    if not self._columnSet[component] then
+      error("No such column: " .. component)
     end
   end
 

@@ -26,21 +26,21 @@ function M.updateTablets(query, engine)
       local included = true
 
       for _, component in pairs(query.arguments) do
-        if not tablet.componentSet[component] then
+        if not tablet.columnSet[component] then
           included = false
           break
         end
       end
 
       for _, component in pairs(query.tags) do
-        if not tablet.componentSet[component] then
+        if not tablet.columnSet[component] then
           included = false
           break
         end
       end
 
       for _, component in pairs(query.excludes) do
-        if tablet.componentSet[component] then
+        if tablet.columnSet[component] then
           included = false
           break
         end

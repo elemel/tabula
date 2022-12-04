@@ -15,19 +15,15 @@ M.mt = {
 
     if column and value ~= nil then
       column[row._index] = value
-    elseif not column and value == nil then
-      if not row._shard._tablet.engine._componentSet[component] then
-        error("No such component: " .. component)
-      end
-    else
+    elseif column or value ~= nil then
       local oldTablet = row._shard._tablet
       local newTablet = column and oldTablet:addParent(component)
         or oldTablet:addChild(component)
       local newShard, newIndex = newTablet:pushRow()
 
-      local componentSet = column and newTablet.componentSet
-        or oldTablet.componentSet
-      copyRow(componentSet, row._shard, row._index, newShard, newIndex)
+      local columnSet = column and newTablet.columnSet
+        or oldTablet.columnSet
+      copyRow(columnSet, row._shard, row._index, newShard, newIndex)
 
       if not column then
         newShard[component][newIndex] = value

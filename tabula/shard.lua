@@ -9,16 +9,16 @@ function M.newShard(tablet)
     _size = 0,
   }
 
-  for component in pairs(tablet.componentSet) do
-    local componentType = tablet.engine._componentTypes[component]
+  for component in pairs(tablet.columnSet) do
+    local columnType = tablet.engine._columnTypes[component]
 
-    if componentType then
-      local valueByteSize = ffi.sizeof(componentType.valueType)
+    if columnType then
+      local valueByteSize = ffi.sizeof(columnType.valueType)
       local columnByteSize = math.max(1, valueByteSize * tablet.shardCapacity)
       local columnData = love.data.newByteData(columnByteSize)
       shard._data[component] = columnData
       shard[component] =
-        ffi.cast(componentType.pointerType, columnData:getFFIPointer())
+        ffi.cast(columnType.pointerType, columnData:getFFIPointer())
     else
       shard[component] = {}
     end
@@ -28,13 +28,13 @@ function M.newShard(tablet)
 end
 
 function M.copyRow(
-  componentSet,
+  columnSet,
   sourceShard,
   sourceIndex,
   targetShard,
   targetIndex
 )
-  for component in pairs(componentSet) do
+  for component in pairs(columnSet) do
     local sourceColumn = sourceShard[component]
     local targetColumn = targetShard[component]
     targetColumn[targetIndex] = sourceColumn[sourceIndex]
