@@ -124,7 +124,7 @@ local function updateClock(engine, dt)
 
   while clock.fixedDt <= clock.accumulatedDt do
     clock.accumulatedDt = clock.accumulatedDt - clock.fixedDt
-    engine:handleEvent("fixedUpdate", clock.fixedDt)
+    engine:handleEvent("fixedupdate", clock.fixedDt)
   end
 end
 
@@ -252,17 +252,17 @@ function love.load()
   )
 
   engine:addEvent("draw")
-  engine:addEvent("fixedUpdate")
+  engine:addEvent("fixedupdate")
   engine:addEvent("update")
 
   engine:addSystem("update", updateClock)
 
-  engine:addSystem("fixedUpdate", createBodies)
-  engine:addSystem("fixedUpdate", createFixtures)
-  engine:addSystem("fixedUpdate", updateWorld)
-  engine:addSystem("fixedUpdate", destroyFixtures)
-  engine:addSystem("fixedUpdate", destroyBodies)
-  engine:addSystem("fixedUpdate", removeDeadRows)
+  engine:addSystem("fixedupdate", createBodies)
+  engine:addSystem("fixedupdate", createFixtures)
+  engine:addSystem("fixedupdate", updateWorld)
+  engine:addSystem("fixedupdate", destroyFixtures)
+  engine:addSystem("fixedupdate", destroyBodies)
+  engine:addSystem("fixedupdate", removeDeadRows)
 
   engine:addSystem("draw", drawFixtures)
   engine:addSystem("draw", drawFps)
