@@ -99,10 +99,10 @@ function M:popRow()
   end
 end
 
-function M:addRow(values)
+function M:addRow(cells)
   local shard, index = self:pushRow()
 
-  for component, value in pairs(values) do
+  for component, value in pairs(cells) do
     local column = shard[component]
     column[index] = value
   end

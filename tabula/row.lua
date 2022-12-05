@@ -21,8 +21,7 @@ M.mt = {
         or oldTablet:addChild(component)
       local newShard, newIndex = newTablet:pushRow()
 
-      local columnSet = column and newTablet.columnSet
-        or oldTablet.columnSet
+      local columnSet = column and newTablet.columnSet or oldTablet.columnSet
       copyRow(columnSet, row._shard, row._index, newShard, newIndex)
 
       if not column then

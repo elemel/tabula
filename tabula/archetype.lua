@@ -9,28 +9,28 @@ local sort = assert(table.sort)
 
 local M = {}
 
-local cachedColumnSets = {}
-cachedColumnSets.__mode = "k"
+local cachedComponentSets = {}
+cachedComponentSets.__mode = "k"
 
 function M.parse(archetype, result)
   result = result or {}
-  local columnSet = cachedColumnSets[archetype]
+  local componentSet = cachedComponentSets[archetype]
 
-  if not columnSet then
-    columnSet = {}
+  if not componentSet then
+    componentSet = {}
 
     for component in gmatch(archetype, "%w+") do
-      columnSet[component] = true
+      componentSet[component] = true
     end
 
-    cachedColumnSets[archetype] = columnSet
+    cachedComponentSets[archetype] = componentSet
   end
 
-  return copy(columnSet, result)
+  return copy(componentSet, result)
 end
 
-function M.format(columnSet)
-  local components = keys(columnSet)
+function M.format(componentSet)
+  local components = keys(componentSet)
   sort(components)
   return "/" .. concat(components, "/")
 end

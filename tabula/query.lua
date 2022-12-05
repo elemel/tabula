@@ -7,11 +7,10 @@ local insert = assert(table.insert)
 
 local M = {}
 
-function M.newQuery(arguments, tags, excludes)
+function M.newQuery(allOf, noneOf)
   return {
-    arguments = copy(arguments),
-    tags = copy(tags),
-    excludes = copy(excludes),
+    allOf = copy(allOf),
+    noneOf = copy(noneOf),
 
     tabletVersion = 0,
     tablets = {},
@@ -25,21 +24,14 @@ function M.updateTablets(query, engine)
     for _, tablet in pairs(engine._tablets) do
       local included = true
 
-      for _, component in pairs(query.arguments) do
+      for _, component in pairs(query.allOf) do
         if not tablet.columnSet[component] then
           included = false
           break
         end
       end
 
-      for _, component in pairs(query.tags) do
-        if not tablet.columnSet[component] then
-          included = false
-          break
-        end
-      end
-
-      for _, component in pairs(query.excludes) do
+      for _, component in pairs(query.noneOf) do
         if tablet.columnSet[component] then
           included = false
           break
