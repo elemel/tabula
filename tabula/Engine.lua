@@ -17,18 +17,28 @@ local sortedKeys = assert(tableMod.sortedKeys)
 local M = Class.new()
 
 function M:init()
-  self._rows = {}
-  self._nextEntity = 1
+  self._properties = {}
 
   self._dataTypes = {}
-  self._componentSet = {}
-  self._componentTypes = {}
+  self._columnSet = {}
+  self._columnTypes = {}
 
   self._tablets = {}
   self._tabletVersion = 1
 
+  self._rows = {}
+  self._nextEntity = 1
+
   self._queries = {}
   self._eventSystems = {}
+end
+
+function M:setProperty(name, value)
+  self._properties[name] = value
+end
+
+function M:getProperty(name)
+  return self._properties[name]
 end
 
 function M:addDataType(name)
@@ -39,51 +49,51 @@ function M:addDataType(name)
   self._dataTypes[name] = dataMod.newDataType(name)
 end
 
-function M:addComponent(component, typeName)
-  if self._componentSet[component] then
-    error("Duplicate component: " .. component)
+function M:addColumn(component, typeName)
+  if self._columnSet[component] then
+    error("Duplicate column: " .. component)
   end
 
   if typeName then
-    local componentType = self._dataTypes[typeName]
+    local columnType = self._dataTypes[typeName]
 
-    if not componentType then
+    if not columnType then
       error("No such data type: " .. typeName)
     end
 
-    self._componentTypes[component] = componentType
+    self._columnTypes[component] = columnType
   end
 
-  self._componentSet[component] = true
+  self._columnSet[component] = true
 end
 
-function M:addRow(values)
-  if values.entity then
+function M:addRow(cells)
+  if cells.entity then
     if self.rows[entity] then
       error("Duplicate row: " .. entity)
     end
   else
-    values = tableMod.copy(values)
+    cells = tableMod.copy(cells)
 
     while self._rows[self._nextEntity] do
       self._nextEntity = self._nextEntity + 1
     end
 
-    values.entity = self._nextEntity
+    cells.entity = self._nextEntity
     self._nextEntity = self._nextEntity + 1
   end
 
-  local archetype = formatArchetype(values)
+  local archetype = formatArchetype(cells)
   local tablet = self:addTablet(archetype)
 
   local row = {}
-  row._shard, row._index = tablet:addRow(values)
+  row._shard, row._index = tablet:addRow(cells)
   setmetatable(row, rowMod.mt)
-  self._rows[values.entity] = row
+  self._rows[cells.entity] = row
   return row
 end
 
-function M:findRow(entity)
+function M:getRow(entity)
   return self._rows[entity]
 end
 
@@ -94,7 +104,7 @@ function M:removeRow(entity)
     error("No such row: " .. entity)
   end
 
-  row._shard.tablet:removeRow(row._shard, row._index)
+  row._shard._tablet:removeRow(row._shard, row._index)
 
   setmetatable(row, nil)
   clear(row)
@@ -135,34 +145,27 @@ function M:addSystem(event, system)
   table.insert(self._eventSystems[event], system)
 end
 
-function M:addQuery(name, arguments, tags, excludes)
+function M:addQuery(name, allOf, noneOf)
   if self._queries[name] then
     error("Duplicate query: " .. name)
   end
 
-  arguments = arguments or {}
-  tags = tags or {}
-  excludes = excludes or {}
+  allOf = allOf or {}
+  noneOf = noneOf or {}
 
-  for _, component in ipairs(arguments) do
-    if not self._componentSet[component] then
-      error("No such component: " .. component)
+  for _, component in ipairs(allOf) do
+    if not self._columnSet[component] then
+      error("No such column: " .. component)
     end
   end
 
-  for _, component in ipairs(tags) do
-    if not self._componentSet[component] then
-      error("No such component: " .. component)
+  for _, component in ipairs(noneOf) do
+    if not self._columnSet[component] then
+      error("No such column: " .. component)
     end
   end
 
-  for _, component in ipairs(excludes) do
-    if not self._componentSet[component] then
-      error("No such component: " .. component)
-    end
-  end
-
-  self._queries[name] = queryMod.newQuery(arguments, tags, excludes)
+  self._queries[name] = queryMod.newQuery(allOf, noneOf)
 end
 
 function M:handleEvent(event, ...)
@@ -186,9 +189,9 @@ function M:eachRow(queryName, callback)
 
   queryMod.updateTablets(query, self)
 
-  local arity = #query.arguments
+  local arity = #query.allOf
   local func = queryMod.eachRowFuncs[arity]
-  func(query.tablets, query.arguments, callback)
+  func(query.tablets, query.allOf, callback)
 end
 
 return M

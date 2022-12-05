@@ -7,11 +7,10 @@ local insert = assert(table.insert)
 
 local M = {}
 
-function M.newQuery(arguments, tags, excludes)
+function M.newQuery(allOf, noneOf)
   return {
-    arguments = copy(arguments),
-    tags = copy(tags),
-    excludes = copy(excludes),
+    allOf = copy(allOf),
+    noneOf = copy(noneOf),
 
     tabletVersion = 0,
     tablets = {},
@@ -25,22 +24,15 @@ function M.updateTablets(query, engine)
     for _, tablet in pairs(engine._tablets) do
       local included = true
 
-      for _, component in pairs(query.arguments) do
-        if not tablet.componentSet[component] then
+      for _, component in pairs(query.allOf) do
+        if not tablet.columnSet[component] then
           included = false
           break
         end
       end
 
-      for _, component in pairs(query.tags) do
-        if not tablet.componentSet[component] then
-          included = false
-          break
-        end
-      end
-
-      for _, component in pairs(query.excludes) do
-        if tablet.componentSet[component] then
+      for _, component in pairs(query.noneOf) do
+        if tablet.columnSet[component] then
           included = false
           break
         end
@@ -81,7 +73,6 @@ function M.generateEachRowCode(arity, buffer)
 
     for j = #shards, 1, -1 do
       local shard = shards[j]
-      local columns = shard.columns
 
 ]]
   )
@@ -89,7 +80,7 @@ function M.generateEachRowCode(arity, buffer)
   for i = 1, arity do
     insert(buffer, "      local column")
     insert(buffer, i)
-    insert(buffer, " = columns[component")
+    insert(buffer, " = shard[component")
     insert(buffer, i)
     insert(buffer, "]\n")
   end
@@ -98,7 +89,7 @@ function M.generateEachRowCode(arity, buffer)
     buffer,
     [[
 
-      for k = shard.size - 1, 0, -1 do
+      for k = shard._size - 1, 0, -1 do
         callback(k]]
   )
 

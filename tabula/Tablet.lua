@@ -1,6 +1,6 @@
 local archetypeMod = require("tabula.archetype")
 local Class = require("tabula.Class")
-local ffi = require("ffi")
+local shardMod = require("tabula.shard")
 local tableMod = require("tabula.table")
 
 local formatArchetype = assert(archetypeMod.format)
@@ -12,11 +12,11 @@ function M:init(engine, archetype)
   self.engine = assert(engine)
   self.archetype = assert(archetype)
 
-  self.componentSet = parseArchetype(self.archetype)
+  self.columnSet = parseArchetype(self.archetype)
 
-  for component in pairs(self.componentSet) do
-    if not self.engine._componentSet[component] then
-      error("No such component: " .. component)
+  for component in pairs(self.columnSet) do
+    if not self.engine._columnSet[component] then
+      error("No such column: " .. component)
     end
   end
 
@@ -31,10 +31,10 @@ function M:addParent(component)
   local parent = self.parents[component]
 
   if not parent then
-    local componentSet = parseArchetype(self.archetype)
-    assert(componentSet[component])
-    componentSet[component] = nil
-    local parentArchetype = formatArchetype(componentSet)
+    local columnSet = parseArchetype(self.archetype)
+    assert(columnSet[component])
+    columnSet[component] = nil
+    local parentArchetype = formatArchetype(columnSet)
     parent = self.engine:addTablet(parentArchetype)
     self.parents[component] = parent
   end
@@ -46,10 +46,10 @@ function M:addChild(component)
   local child = self.children[component]
 
   if not child then
-    local componentSet = parseArchetype(self.archetype)
-    assert(not componentSet[component])
-    componentSet[component] = true
-    local childArchetype = formatArchetype(componentSet)
+    local columnSet = parseArchetype(self.archetype)
+    assert(not columnSet[component])
+    columnSet[component] = true
+    local childArchetype = formatArchetype(columnSet)
     child = self.engine:addTablet(childArchetype)
     self.children[component] = child
   end
@@ -60,94 +60,61 @@ end
 function M:pushRow()
   local shards = self.shards
 
-  if #shards == 0 or shards[#shards].size == self.shardCapacity then
+  if #shards == 0 or shards[#shards]._size == self.shardCapacity then
     print(
       "Adding shard #" .. (#shards + 1) .. " for archetype: " .. self.archetype
     )
 
-    local shard = {
-      tablet = self,
-      columnData = {},
-      columns = {},
-      size = 0,
-    }
-
-    for component in pairs(self.componentSet) do
-      local componentType = self.engine._componentTypes[component]
-
-      if componentType then
-        local valueByteSize = ffi.sizeof(componentType.valueType)
-        local columnByteSize = math.max(1, valueByteSize * self.shardCapacity)
-        local columnData = love.data.newByteData(columnByteSize)
-        shard.columnData[component] = columnData
-        shard.columns[component] =
-          ffi.cast(componentType.pointerType, columnData:getFFIPointer())
-      else
-        shard.columns[component] = {}
-      end
-    end
-
+    local shard = shardMod.newShard(self)
     table.insert(shards, shard)
   end
 
   local shard = shards[#shards]
 
-  local index = shard.size
-  shard.size = shard.size + 1
+  local index = shard._size
+  shard._size = shard._size + 1
 
   return shard, index
 end
 
 function M:popRow()
   local shard = self.shards[#self.shards]
-  local index = shard.size - 1
+  local index = shard._size - 1
 
-  for component in pairs(self.componentSet) do
-    local column = shard.columns[component]
-    local componentType = self.engine._componentTypes[component]
+  for component in pairs(self.columnSet) do
+    local column = shard[component]
+    local columnType = self.engine._columnTypes[component]
 
-    if componentType then
-      column[index] = componentType.valueType()
+    if columnType then
+      column[index] = columnType.valueType()
     else
       column[index] = nil
     end
   end
 
-  shard.size = shard.size - 1
+  shard._size = shard._size - 1
 
-  if shard.size == 0 then
+  if shard._size == 0 then
     table.remove(self.shards)
   end
 end
 
-function M:addRow(values)
+function M:addRow(cells)
   local shard, index = self:pushRow()
 
-  for component, value in pairs(values) do
-    local column = shard.columns[component]
+  for component, value in pairs(cells) do
+    local column = shard[component]
     column[index] = value
   end
 
   return shard, index
 end
 
-function M:copyRow(targetShard, targetIndex, sourceShard, sourceIndex)
-  assert(targetShard.tablet == self)
-
-  for component, targetColumn in pairs(targetShard.columns) do
-    local sourceColumn = sourceShard.columns[component]
-
-    if sourceColumn then
-      targetColumn[targetIndex] = sourceColumn[sourceIndex]
-    end
-  end
-end
-
 function M:removeRow(shard, index)
   local lastShard = self.shards[#self.shards]
-  local lastIndex = lastShard.size - 1
+  local lastIndex = lastShard._size - 1
 
-  self:copyRow(shard, index, lastShard, lastIndex)
+  shardMod.copyRow(self.columnSet, lastShard, lastIndex, shard, index)
   self:popRow()
 end
 
