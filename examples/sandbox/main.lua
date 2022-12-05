@@ -52,12 +52,6 @@ local function decompose2(transform)
   return x, y, angle, scaleX, scaleY, 0, 0, shearX, shearY
 end
 
-local function getTransform(row)
-  local position = row.localPosition or vec2()
-  local rotation = row.localRotation or 0
-  return position, rotation
-end
-
 local function getLocalToWorld(engine, entity, result)
   result = result or love.math.newTransform()
   local row = engine:getRow(entity)
