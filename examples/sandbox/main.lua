@@ -15,15 +15,13 @@ ffi.cdef([[
 local vec2 = ffi.typeof("vec2")
 
 local function sign(x)
-  return x > 0 and 1 or x < 0 and -1 or 0 
+  return x > 0 and 1 or x < 0 and -1 or 0
 end
 
 -- http://frederic-wang.fr/decomposition-of-2d-transform-matrices.html
 local function decompose2(transform)
-  local t11, t12, t13, t14,
-    t21, t22, t23, t24,
-    t31, t32, t33, t34,
-    t41, t42, t43, t44 = transform:getMatrix()
+  local t11, t12, t13, t14, t21, t22, t23, t24, t31, t32, t33, t34, t41, t42, t43, t44 =
+    transform:getMatrix()
 
   local x = t14
   local y = t24
@@ -52,12 +50,12 @@ local function decompose2(transform)
   return x, y, angle, scaleX, scaleY, 0, 0, shearX, shearY
 end
 
-local function getLocalToWorld(engine, entity, result)
+local function getLocalToWorld(database, entity, result)
   result = result or love.math.newTransform()
-  local row = engine:getRow(entity)
+  local row = database:getRow(entity)
 
   if row.parent then
-    getLocalToWorld(engine, row.parent, result)
+    getLocalToWorld(database, row.parent, result)
   else
     result:reset()
   end
@@ -69,71 +67,70 @@ local function getLocalToWorld(engine, entity, result)
   return result
 end
 
-local function createBodies(engine, dt)
-  engine:eachRow("createBodies", function(i, entities, bodyConfigs)
-    local world = engine:getProperty("world")
+local function createBodies(database, dt)
+  database:eachRow("createBodies", function(i, entities, bodyConfigs)
+    local world = database:getProperty("world")
     local entity = entities[i]
-    local row = engine:getRow(entity)
-    local localToWorld = getLocalToWorld(engine, entity)
+    local row = database:getRow(entity)
+    local localToWorld = getLocalToWorld(database, entity)
     local x, y, angle = decompose2(localToWorld)
     local config = bodyConfigs[i]
-    local body =
-      love.physics.newBody(world, x, y, config.bodyType)
+    local body = love.physics.newBody(world, x, y, config.bodyType)
     body:setUserData(entity)
     body:setAngle(angle)
     row.body = body
   end)
 end
 
-local function createFixtures(engine, dt)
-  engine:eachRow("createFixtures", function(i, entities, fixtureConfigs)
-    local world = engine:getProperty("world")
-    local row = engine:getRow(entities[i])
+local function createFixtures(database, dt)
+  database:eachRow("createFixtures", function(i, entities, fixtureConfigs)
+    local world = database:getProperty("world")
+    local row = database:getRow(entities[i])
     local body = assert(row.body)
     local shape = love.physics.newRectangleShape(1, 1)
     row.fixture = love.physics.newFixture(body, shape)
   end)
 end
 
-local function destroyFixtures(engine, dt)
-  engine:eachRow("destroyFixtures", function(i, entities, fixtures)
-    local row = engine:getRow(entities[i])
+local function destroyFixtures(database, dt)
+  database:eachRow("destroyFixtures", function(i, entities, fixtures)
+    local row = database:getRow(entities[i])
     row.fixture:destroy()
     row.fixture = nil
   end)
 end
 
-local function destroyBodies(engine, dt)
-  engine:eachRow("destroyBodies", function(i, entities, bodies)
-    local row = engine:getRow(entities[i])
+local function destroyBodies(database, dt)
+  database:eachRow("destroyBodies", function(i, entities, bodies)
+    local row = database:getRow(entities[i])
     row.body:destroy()
     row.body = nil
   end)
 end
 
-local function removeDeadRows(engine, dt)
-  engine:eachRow("removeDeadRows", function(i, entities)
-    engine:removeRow(entities[i])
+local function removeDeadRows(database, dt)
+  database:eachRow("removeDeadRows", function(i, entities)
+    database:removeRow(entities[i])
   end)
 end
 
-local function updateClock(engine, dt)
-  local clock = engine:getProperty("clock")
+local function updateClock(database, dt)
+  local clock = database:getProperty("clock")
   clock.accumulatedDt =
     math.min(clock.accumulatedDt + dt, clock.maxAccumulatedDt)
 
   while clock.fixedDt <= clock.accumulatedDt do
     clock.accumulatedDt = clock.accumulatedDt - clock.fixedDt
-    engine:handleEvent("fixedupdate", clock.fixedDt)
+    database:handleEvent("fixedupdate", clock.fixedDt)
   end
 end
 
-local function updateWorld(engine, dt)
-  local world = engine:getProperty("world")
+local function updateWorld(database, dt)
+  local world = database:getProperty("world")
   world:update(dt)
 end
 
-local function drawBodies(engine)
+local function drawBodies(database)
   love.graphics.push("all")
 
   local width, height = love.graphics.getDimensions()
@@ -142,7 +139,7 @@ local function drawBodies(engine)
   love.graphics.scale(scale)
   love.graphics.setLineWidth(1 / scale)
 
-  local world = engine:getProperty("world")
+  local world = database:getProperty("world")
 
   for _, body in ipairs(world:getBodies()) do
     local x, y = body:getPosition()
@@ -152,7 +149,7 @@ local function drawBodies(engine)
   love.graphics.pop()
 end
 
-local function drawFixtures(engine)
+local function drawFixtures(database)
   love.graphics.push("all")
 
   local width, height = love.graphics.getDimensions()
@@ -161,7 +158,7 @@ local function drawFixtures(engine)
   love.graphics.scale(scale)
   love.graphics.setLineWidth(1 / scale)
 
-  local world = engine:getProperty("world")
+  local world = database:getProperty("world")
 
   for _, body in ipairs(world:getBodies()) do
     for _, fixture in ipairs(body:getFixtures()) do
@@ -183,7 +180,7 @@ local function drawFixtures(engine)
   love.graphics.pop()
 end
 
-local function drawFps(engine)
+local function drawFps(database)
   love.graphics.push("all")
 
   local text = love.timer.getFPS() .. " FPS"
@@ -204,76 +201,76 @@ end
 function love.load()
   love.physics.setMeter(1)
 
-  engine = tabula.newEngine()
+  database = tabula.newDatabase()
 
-  engine:setProperty("clock", {
+  database:setProperty("clock", {
     fixedDt = 1 / 60,
     accumulatedDt = 0,
     maxAccumulatedDt = 0.1,
   })
-  engine:setProperty("world", love.physics.newWorld(0, 10))
+  database:setProperty("world", love.physics.newWorld(0, 10))
 
-  engine:addDataType("double")
-  engine:addDataType("float")
-  engine:addDataType("tag")
-  engine:addDataType("vec2")
+  database:addDataType("double")
+  database:addDataType("float")
+  database:addDataType("tag")
+  database:addDataType("vec2")
 
-  engine:addColumn("body")
-  engine:addColumn("bodyConfig")
-  engine:addColumn("children")
-  engine:addColumn("deadTag", "tag")
-  engine:addColumn("entity", "double")
-  engine:addColumn("fixture")
-  engine:addColumn("fixtureConfig")
-  engine:addColumn("localToParent")
-  engine:addColumn("localToWorld")
-  engine:addColumn("parent", "double")
+  database:addColumn("body")
+  database:addColumn("bodyConfig")
+  database:addColumn("children")
+  database:addColumn("deadTag", "tag")
+  database:addColumn("entity", "double")
+  database:addColumn("fixture")
+  database:addColumn("fixtureConfig")
+  database:addColumn("localToParent")
+  database:addColumn("localToWorld")
+  database:addColumn("parent", "double")
 
-  engine:addQuery(
+  database:addQuery(
     "createBodies",
     { "entity", "bodyConfig" },
     { "body", "deadTag" }
   )
 
-  engine:addQuery(
+  database:addQuery(
     "createFixtures",
     { "entity", "fixtureConfig" },
     { "fixture", "deadTag" }
   )
 
-  engine:addQuery("destroyFixtures", { "entity", "fixture", "deadTag" })
+  database:addQuery("destroyFixtures", { "entity", "fixture", "deadTag" })
 
-  engine:addQuery("destroyBodies", { "entity", "body", "deadTag" })
+  database:addQuery("destroyBodies", { "entity", "body", "deadTag" })
 
-  engine:addQuery(
+  database:addQuery(
     "removeDeadRows",
     { "entity", "deadTag" },
     { "body", "fixture" }
   )
 
-  engine:addEvent("draw")
-  engine:addEvent("fixedupdate")
-  engine:addEvent("update")
+  database:addEvent("draw")
+  database:addEvent("fixedupdate")
+  database:addEvent("update")
 
-  engine:addSystem("update", updateClock)
+  database:addSystem("update", updateClock)
 
-  engine:addSystem("fixedupdate", createBodies)
-  engine:addSystem("fixedupdate", createFixtures)
-  engine:addSystem("fixedupdate", updateWorld)
-  engine:addSystem("fixedupdate", destroyFixtures)
-  engine:addSystem("fixedupdate", destroyBodies)
-  engine:addSystem("fixedupdate", removeDeadRows)
+  database:addSystem("fixedupdate", createBodies)
+  database:addSystem("fixedupdate", createFixtures)
+  database:addSystem("fixedupdate", updateWorld)
+  database:addSystem("fixedupdate", destroyFixtures)
+  database:addSystem("fixedupdate", destroyBodies)
+  database:addSystem("fixedupdate", removeDeadRows)
 
-  engine:addSystem("draw", drawFixtures)
-  engine:addSystem("draw", drawFps)
+  database:addSystem("draw", drawFixtures)
+  database:addSystem("draw", drawFps)
 
-  engine:addRow({
+  database:addRow({
     bodyConfig = {},
     fixtureConfig = {},
     localToParent = love.math.newTransform(2, 2),
   })
 
-  engine:addRow({
+  database:addRow({
     bodyConfig = { bodyType = "dynamic" },
     fixtureConfig = {},
     localToParent = love.math.newTransform(2.25, -2, 0.125 * math.pi),
@@ -281,9 +278,9 @@ function love.load()
 end
 
 function love.draw(...)
-  engine:handleEvent("draw", ...)
+  database:handleEvent("draw", ...)
 end
 
 function love.update(...)
-  engine:handleEvent("update", ...)
+  database:handleEvent("update", ...)
 end

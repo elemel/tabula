@@ -31,11 +31,11 @@ local function hslToRgb(h, s, l)
   return r + m, g + m, b + m
 end
 
-function drawBoxes(engine)
+function drawBoxes(database)
   love.graphics.push("all")
   love.graphics.setBlendMode("add")
 
-  engine:eachRow("drawBoxes", function(i, boxes, colors, positions)
+  database:eachRow("drawBoxes", function(i, boxes, colors, positions)
     love.graphics.setColor(colors[i].r, colors[i].g, colors[i].b, colors[i].a)
 
     love.graphics.rectangle(
@@ -50,14 +50,14 @@ function drawBoxes(engine)
   love.graphics.pop()
 end
 
-function handleMouseMoved(engine, x, y, dx, dy, isTouch)
-  engine:eachRow("handleMouseMoved", function(i, positions)
+function handleMouseMoved(database, x, y, dx, dy, isTouch)
+  database:eachRow("handleMouseMoved", function(i, positions)
     positions[i].y = y
   end)
 end
 
-function updateVelocityPositions(engine, dt)
-  engine:eachRow(
+function updateVelocityPositions(database, dt)
+  database:eachRow(
     "updateVelocityPositions",
     function(i, positions, previousPositions, velocities)
       previousPositions[i] = positions[i]
@@ -68,8 +68,8 @@ function updateVelocityPositions(engine, dt)
   )
 end
 
-function updateWallCollisions(engine, dt)
-  engine:eachRow(
+function updateWallCollisions(database, dt)
+  database:eachRow(
     "updateWallCollisions",
     function(i, boxes, positions, velocities)
       if positions[i].y - 0.5 * boxes[i].y < 0 and velocities[i].y < 0 then
@@ -93,12 +93,12 @@ function updateWallCollisions(engine, dt)
   )
 end
 
-function updatePaddleCollisions(engine, dt)
-  engine:eachRow("updatePaddleCollisions", function(i, boxes, positions)
+function updatePaddleCollisions(database, dt)
+  database:eachRow("updatePaddleCollisions", function(i, boxes, positions)
     local paddleBox = boxes[i]
     local paddlePosition = positions[i]
 
-    engine:eachRow(
+    database:eachRow(
       "updatePaddleBallCollisions",
       function(i, boxes, colors, positions, previousPositions, velocities)
         if
@@ -138,7 +138,7 @@ function updatePaddleCollisions(engine, dt)
   end)
 end
 
-function drawFps(engine)
+function drawFps(database)
   local text = love.timer.getFPS() .. " FPS"
   local font = love.graphics.getFont()
 
@@ -155,7 +155,7 @@ end
 function love.load()
   love.mouse.setVisible(false)
 
-  engine = tabula.newEngine()
+  database = tabula.newDatabase()
 
   ffi.cdef([[
     typedef struct color4 {
@@ -169,29 +169,29 @@ function love.load()
     } vec2;
   ]])
 
-  engine:addDataType("color4")
-  engine:addDataType("double")
-  engine:addDataType("tag")
-  engine:addDataType("vec2")
+  database:addDataType("color4")
+  database:addDataType("double")
+  database:addDataType("tag")
+  database:addDataType("vec2")
 
-  engine:addColumn("ballTag", "tag")
-  engine:addColumn("box", "vec2")
-  engine:addColumn("color", "color4")
-  engine:addColumn("entity", "double")
-  engine:addColumn("paddleTag", "tag")
-  engine:addColumn("playerTag", "tag")
-  engine:addColumn("position", "vec2")
-  engine:addColumn("previousPosition", "vec2")
-  engine:addColumn("velocity", "vec2")
+  database:addColumn("ballTag", "tag")
+  database:addColumn("box", "vec2")
+  database:addColumn("color", "color4")
+  database:addColumn("entity", "double")
+  database:addColumn("paddleTag", "tag")
+  database:addColumn("playerTag", "tag")
+  database:addColumn("position", "vec2")
+  database:addColumn("previousPosition", "vec2")
+  database:addColumn("velocity", "vec2")
 
-  engine:addRow({
+  database:addRow({
     box = { 10, 50 },
     color = { 0.9, 0.3, 0.1, 1 },
     paddleTag = {},
     position = { 100, 300 },
   })
 
-  engine:addRow({
+  database:addRow({
     box = { 10, 50 },
     color = { 0, 0.5, 1, 1 },
     paddleTag = {},
@@ -199,19 +199,19 @@ function love.load()
     position = { 700, 300 },
   })
 
-  engine:addRow({
+  database:addRow({
     box = { 2, 600 },
     color = { 0.2, 0.8, 0, 1 },
     position = { 400, 300 },
   })
 
-  engine:addRow({
+  database:addRow({
     box = { 2, 600 },
     color = { 1, 0.3, 0.7, 1 },
     position = { 0, 300 },
   })
 
-  engine:addRow({
+  database:addRow({
     box = { 2, 600 },
     color = { 0.7, 0.3, 1, 1 },
     position = { 800, 300 },
@@ -242,7 +242,7 @@ function love.load()
 
     local a = love.math.randomNormal(0.1, 0.5)
 
-    engine:addRow({
+    database:addRow({
       box = { 2, 2 },
       color = { r, g, b, a },
       ballTag = {},
@@ -252,33 +252,39 @@ function love.load()
     })
   end
 
-  engine:addEvent("draw")
-  engine:addEvent("mouseMoved")
-  engine:addEvent("update")
+  database:addEvent("draw")
+  database:addEvent("mouseMoved")
+  database:addEvent("update")
 
-  engine:addSystem("draw", drawBoxes)
-  engine:addSystem("draw", drawFps)
-  engine:addSystem("mouseMoved", handleMouseMoved)
-  engine:addSystem("update", updateVelocityPositions)
-  engine:addSystem("update", updateWallCollisions)
-  engine:addSystem("update", updatePaddleCollisions)
+  database:addSystem("draw", drawBoxes)
+  database:addSystem("draw", drawFps)
+  database:addSystem("mouseMoved", handleMouseMoved)
+  database:addSystem("update", updateVelocityPositions)
+  database:addSystem("update", updateWallCollisions)
+  database:addSystem("update", updatePaddleCollisions)
 
-  engine:addQuery("drawBoxes", { "box", "color", "position" })
-  engine:addQuery("handleMouseMoved", { "position", "paddleTag", "playerTag" })
+  database:addQuery("drawBoxes", { "box", "color", "position" })
+  database:addQuery(
+    "handleMouseMoved",
+    { "position", "paddleTag", "playerTag" }
+  )
 
-  engine:addQuery(
+  database:addQuery(
     "updateVelocityPositions",
     { "position", "previousPosition", "velocity" }
   )
 
-  engine:addQuery(
+  database:addQuery(
     "updateWallCollisions",
     { "box", "position", "velocity", "ballTag" }
   )
 
-  engine:addQuery("updatePaddleCollisions", { "box", "position", "paddleTag" })
+  database:addQuery(
+    "updatePaddleCollisions",
+    { "box", "position", "paddleTag" }
+  )
 
-  engine:addQuery("updatePaddleBallCollisions", {
+  database:addQuery("updatePaddleBallCollisions", {
     "box",
     "color",
     "position",
@@ -289,13 +295,13 @@ function love.load()
 end
 
 function love.draw(...)
-  engine:handleEvent("draw", ...)
+  database:handleEvent("draw", ...)
 end
 
 function love.mousemoved(...)
-  engine:handleEvent("mouseMoved", ...)
+  database:handleEvent("mouseMoved", ...)
 end
 
 function love.update(...)
-  engine:handleEvent("update", ...)
+  database:handleEvent("update", ...)
 end

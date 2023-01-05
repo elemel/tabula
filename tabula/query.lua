@@ -17,11 +17,11 @@ function M.newQuery(allOf, noneOf)
   }
 end
 
-function M.updateTablets(query, engine)
-  if query.tabletVersion ~= engine._tabletVersion then
+function M.updateTablets(query, database)
+  if query.tabletVersion ~= database._tabletVersion then
     clear(query.tablets)
 
-    for _, tablet in pairs(engine._tablets) do
+    for _, tablet in pairs(database._tablets) do
       local included = true
 
       for _, component in pairs(query.allOf) do
@@ -43,7 +43,7 @@ function M.updateTablets(query, engine)
       end
     end
 
-    query.tabletVersion = engine._tabletVersion
+    query.tabletVersion = database._tabletVersion
   end
 end
 

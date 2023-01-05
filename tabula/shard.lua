@@ -10,7 +10,7 @@ function M.newShard(tablet)
   }
 
   for component in pairs(tablet.columnSet) do
-    local columnType = tablet.engine._columnTypes[component]
+    local columnType = tablet.database._columnTypes[component]
 
     if columnType then
       local valueByteSize = ffi.sizeof(columnType.valueType)

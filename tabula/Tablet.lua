@@ -8,14 +8,14 @@ local parseArchetype = assert(archetypeMod.parse)
 
 local M = Class.new()
 
-function M:init(engine, archetype)
-  self.engine = assert(engine)
+function M:init(database, archetype)
+  self.database = assert(database)
   self.archetype = assert(archetype)
 
   self.columnSet = parseArchetype(self.archetype)
 
   for component in pairs(self.columnSet) do
-    if not self.engine._columnSet[component] then
+    if not self.database._columnSet[component] then
       error("No such column: " .. component)
     end
   end
@@ -35,7 +35,7 @@ function M:addParent(component)
     assert(columnSet[component])
     columnSet[component] = nil
     local parentArchetype = formatArchetype(columnSet)
-    parent = self.engine:addTablet(parentArchetype)
+    parent = self.database:addTablet(parentArchetype)
     self.parents[component] = parent
   end
 
@@ -50,7 +50,7 @@ function M:addChild(component)
     assert(not columnSet[component])
     columnSet[component] = true
     local childArchetype = formatArchetype(columnSet)
-    child = self.engine:addTablet(childArchetype)
+    child = self.database:addTablet(childArchetype)
     self.children[component] = child
   end
 
@@ -83,7 +83,7 @@ function M:popRow()
 
   for component in pairs(self.columnSet) do
     local column = shard[component]
-    local columnType = self.engine._columnTypes[component]
+    local columnType = self.database._columnTypes[component]
 
     if columnType then
       column[index] = columnType.valueType()

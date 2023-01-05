@@ -1,7 +1,7 @@
-local Engine = require("tabula.Engine")
+local Database = require("tabula.Database")
 
 local M = {}
 
-M.newEngine = Engine.new
+M.newDatabase = Database.new
 
 return M
