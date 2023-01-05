@@ -86,7 +86,7 @@ function M:popRow()
     local columnType = self.database._columnTypes[component]
 
     if columnType then
-      column[index] = columnType.valueType()
+      column[index] = columnType.type()
     else
       column[index] = nil
     end

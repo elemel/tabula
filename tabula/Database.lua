@@ -1,6 +1,6 @@
 local archetypeMod = require("tabula.archetype")
 local Class = require("tabula.Class")
-local dataMod = require("tabula.data")
+local DataType = require("tabula.DataType")
 local ffi = require("ffi")
 local queryMod = require("tabula.query")
 local rowMod = require("tabula.row")
@@ -45,7 +45,7 @@ function M:addDataType(name)
     error("Duplicate data type: " .. name)
   end
 
-  self._dataTypes[name] = dataMod.newDataType(name)
+  self._dataTypes[name] = DataType.new(name)
 end
 
 function M:addColumn(component, typeName)

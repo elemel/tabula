@@ -13,8 +13,7 @@ function M.newShard(tablet)
     local columnType = tablet.database._columnTypes[component]
 
     if columnType then
-      local valueByteSize = ffi.sizeof(columnType.valueType)
-      local columnByteSize = math.max(1, valueByteSize * tablet.shardCapacity)
+      local columnByteSize = math.max(1, columnType.size * tablet.shardCapacity)
       local columnData = love.data.newByteData(columnByteSize)
       shard._data[component] = columnData
       shard[component] =
