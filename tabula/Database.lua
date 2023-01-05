@@ -6,7 +6,6 @@ local queryMod = require("tabula.query")
 local rowMod = require("tabula.row")
 local tableMod = require("tabula.table")
 local Tablet = require("tabula.Tablet")
-local lton = require("lton")
 
 local clear = assert(tableMod.clear)
 local formatArchetype = assert(archetypeMod.format)
